@@ -1,0 +1,14 @@
+namespace RentalManager.Models;
+
+public class Tenant
+{
+    public int Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? IdentityNumber { get; set; }
+    public string? Note { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime UpdatedAt { get; set; } = DateTime.Now;
+    public ICollection<RoomTenant> RoomTenants { get; set; } = new List<RoomTenant>();
+}
