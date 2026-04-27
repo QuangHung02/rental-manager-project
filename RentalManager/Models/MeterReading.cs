@@ -16,5 +16,5 @@ public class MeterReading
     public string? Note { get; set; }
     public string PropertyName => Room?.Property?.Name ?? string.Empty;
     public string RoomName => Room?.RoomName ?? string.Empty;
-    public string FeeTypeName => FeeType?.Name ?? string.Empty;
+    public string FeeTypeName => FeeType?.DisplayName ?? string.Empty;
 }

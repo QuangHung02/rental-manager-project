@@ -1,4 +1,5 @@
 using RentalManager.Enums;
+using RentalManager.Helpers;
 
 namespace RentalManager.Models;
 
@@ -11,4 +12,8 @@ public class FeeType
     public decimal DefaultUnitPrice { get; set; }
     public bool IsSystem { get; set; }
     public bool IsActive { get; set; } = true;
+    public string DisplayName => DisplayText.FeeName(Name);
+    public string CalculationTypeText => DisplayText.For(DefaultCalculationType);
+    public string SystemStatusText => IsSystem ? "Mặc định" : "Tùy chỉnh";
+    public string ActiveStatusText => IsActive ? "Đang dùng" : "Ngừng dùng";
 }

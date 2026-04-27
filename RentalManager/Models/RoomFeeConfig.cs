@@ -1,4 +1,5 @@
 using RentalManager.Enums;
+using RentalManager.Helpers;
 
 namespace RentalManager.Models;
 
@@ -16,5 +17,8 @@ public class RoomFeeConfig
     public bool Enabled { get; set; } = true;
     public string? Note { get; set; }
     public string RoomName => Room?.RoomName ?? string.Empty;
-    public string FeeTypeName => FeeType?.Name ?? string.Empty;
+    public string PropertyName => Room?.PropertyName ?? string.Empty;
+    public string FeeTypeName => FeeType?.DisplayName ?? string.Empty;
+    public string CalculationTypeText => DisplayText.For(CalculationType);
+    public string EnabledText => Enabled ? "Đang áp dụng" : "Ngừng áp dụng";
 }

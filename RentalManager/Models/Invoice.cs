@@ -1,4 +1,5 @@
 using RentalManager.Enums;
+using RentalManager.Helpers;
 
 namespace RentalManager.Models;
 
@@ -25,4 +26,5 @@ public class Invoice
     public string PropertyName => Room?.Property?.Name ?? string.Empty;
     public string RoomName => Room?.RoomName ?? string.Empty;
     public string RepresentativeTenantName => Room?.RoomTenants.FirstOrDefault(x => x.IsRepresentative && x.Status == Enums.RoomTenantStatus.Active)?.Tenant?.FullName ?? string.Empty;
+    public string StatusText => DisplayText.For(Status);
 }

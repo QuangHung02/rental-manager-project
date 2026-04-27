@@ -1,4 +1,5 @@
 using RentalManager.Enums;
+using RentalManager.Helpers;
 
 namespace RentalManager.Models;
 
@@ -15,4 +16,5 @@ public class Payment
     public string BillingMonth => Invoice?.BillingMonth ?? string.Empty;
     public string RoomName => Invoice?.Room?.RoomName ?? string.Empty;
     public string PropertyName => Invoice?.Room?.Property?.Name ?? string.Empty;
+    public string MethodText => DisplayText.For(Method);
 }

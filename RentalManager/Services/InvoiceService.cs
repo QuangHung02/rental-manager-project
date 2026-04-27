@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RentalManager.Data;
+using RentalManager.DTOs;
 using RentalManager.Enums;
 using RentalManager.Helpers;
 using RentalManager.Models;
@@ -65,6 +66,52 @@ public class InvoiceService
         }
 
         db.SaveChanges();
+    }
+
+    public List<InvoiceReadinessRow> GetReadiness(string billingMonth)
+    {
+        using var db = DbContextFactory.Create();
+        var rooms = db.Rooms
+            .Include(x => x.Property)
+            .Where(x => x.Status != RoomStatus.Inactive)
+            .AsNoTracking()
+            .OrderBy(x => x.Property!.Name)
+            .ThenBy(x => x.RoomName)
+            .ToList();
+
+        return rooms.Select(room =>
+        {
+            var hasInvoice = db.Invoices.Any(x => x.RoomId == room.Id && x.BillingMonth == billingMonth);
+            var meterConfigs = db.RoomFeeConfigs.Where(x => x.RoomId == room.Id && x.Enabled && x.CalculationType == CalculationType.Meter).ToList();
+            var missingReading = meterConfigs.Any(config => !db.MeterReadings.Any(r => r.RoomId == room.Id && r.FeeTypeId == config.FeeTypeId && r.BillingMonth == billingMonth));
+            var status = hasInvoice ? "Đã có hóa đơn" : missingReading ? "Thiếu chỉ số" : "Đủ dữ liệu";
+
+            return new InvoiceReadinessRow
+            {
+                RoomId = room.Id,
+                PropertyName = room.Property?.Name ?? string.Empty,
+                RoomName = room.RoomName,
+                StatusText = status
+            };
+        }).ToList();
+    }
+
+    public int GenerateReady(string billingMonth)
+    {
+        var readyRoomIds = GetReadiness(billingMonth)
+            .Where(x => x.StatusText == "Đủ dữ liệu")
+            .Select(x => x.RoomId)
+            .ToList();
+
+        using var db = DbContextFactory.Create();
+        foreach (var roomId in readyRoomIds)
+        {
+            var invoice = _calculationService.BuildDraftInvoice(roomId, billingMonth);
+            db.Invoices.Add(invoice);
+        }
+
+        db.SaveChanges();
+        return readyRoomIds.Count;
     }
 
     public void Issue(int invoiceId)
