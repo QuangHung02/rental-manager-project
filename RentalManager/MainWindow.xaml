@@ -142,6 +142,7 @@
                             <StackPanel><TextBlock Text="Trạng thái"/><ComboBox ItemsSource="{Binding RoomFormStatusOptions}" SelectedValue="{Binding NewRoom.Status}" SelectedValuePath="Value" DisplayMemberPath="Text"/></StackPanel>
                             <Button Content="Thêm mới" Command="{Binding AddRoomCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Lưu thay đổi" Command="{Binding SaveRoomCommand}" VerticalAlignment="Bottom"/>
+                            <Button Content="Hủy sửa" Command="{Binding CancelRoomEditCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Sửa dòng chọn" Command="{Binding EditRoomCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Trả phòng" Command="{Binding DeactivateRoomCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
@@ -355,6 +356,7 @@
                             <StackPanel><TextBlock Text="CCCD/CMND"/><TextBox Text="{Binding NewTenant.IdentityNumber, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
                             <Button Content="Thêm mới" Command="{Binding AddTenantCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Lưu thay đổi" Command="{Binding SaveTenantCommand}" VerticalAlignment="Bottom"/>
+                            <Button Content="Hủy sửa" Command="{Binding CancelTenantEditCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Sửa dòng chọn" Command="{Binding EditTenantCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
                     </GroupBox>
@@ -390,8 +392,9 @@
                     </GroupBox>
                     <GroupBox DockPanel.Dock="Top" Header="Gán người thuê vào phòng">
                         <WrapPanel>
-                            <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding Rooms}" SelectedValue="{Binding NewRoomTenant.RoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="130"/></StackPanel>
-                            <StackPanel><TextBlock Text="Người thuê"/><ComboBox ItemsSource="{Binding Tenants}" SelectedValue="{Binding NewRoomTenant.TenantId}" SelectedValuePath="Id" DisplayMemberPath="FullName" Width="170"/></StackPanel>
+                            <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding AssignmentNewPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
+                            <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding AssignmentRoomOptions}" SelectedValue="{Binding NewRoomTenant.RoomId}" SelectedValuePath="Id" DisplayMemberPath="DisplayNameWithProperty" Width="190"/></StackPanel>
+                            <StackPanel><TextBlock Text="Người thuê"/><ComboBox x:Name="AssignmentTenantComboBox" ItemsSource="{Binding AssignmentTenantOptions}" SelectedItem="{Binding SelectedAssignmentTenant, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="AssignmentDisplayText" TextSearch.TextPath="AssignmentDisplayText" IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True" Width="230" Loaded="AssignmentTenantComboBox_Loaded" GotKeyboardFocus="AssignmentTenantComboBox_GotKeyboardFocus" PreviewMouseDown="AssignmentTenantComboBox_PreviewMouseDown" SelectionChanged="AssignmentTenantComboBox_SelectionChanged"/></StackPanel>
                             <StackPanel><TextBlock Text="Ngày bắt đầu"/><DatePicker SelectedDate="{Binding NewRoomTenant.StartDate}" Width="130"/></StackPanel>
                             <CheckBox Content="Người đại diện" IsChecked="{Binding NewRoomTenant.IsRepresentative}" VerticalAlignment="Bottom" Margin="8"/>
                             <Button Content="Gán vào phòng" Command="{Binding AssignTenantCommand}" VerticalAlignment="Bottom"/>
@@ -472,6 +475,7 @@
                             <Button Content="Thêm mới" Command="{Binding AddRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Sửa dòng chọn" Command="{Binding EditRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Lưu thay đổi" Command="{Binding SaveRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
+                            <Button Content="Hủy sửa" Command="{Binding CancelRoomFeeConfigEditCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Ngừng áp dụng" Command="{Binding DisableRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
                     </GroupBox>
@@ -513,6 +517,7 @@
                             <Button Content="Thêm mới" Command="{Binding AddFeeTypeCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Sửa dòng chọn" Command="{Binding EditFeeTypeCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Lưu thay đổi" Command="{Binding SaveFeeTypeCommand}" VerticalAlignment="Bottom"/>
+                            <Button Content="Hủy sửa" Command="{Binding CancelFeeTypeEditCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Ngừng sử dụng" Command="{Binding DeactivateFeeTypeCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
                     </GroupBox>
@@ -549,6 +554,7 @@
                             <StackPanel><TextBlock Text="Ghi chú"/><TextBox Text="{Binding NewProperty.Note, UpdateSourceTrigger=PropertyChanged}" MinWidth="240"/></StackPanel>
                             <Button Content="Thêm mới" Command="{Binding AddPropertyCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Lưu thay đổi" Command="{Binding SavePropertyCommand}" VerticalAlignment="Bottom"/>
+                            <Button Content="Hủy sửa" Command="{Binding CancelPropertyEditCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Sửa dòng chọn" Command="{Binding EditPropertyCommand}" VerticalAlignment="Bottom"/>
                             <Button Content="Ngừng sử dụng" Command="{Binding DeactivatePropertyCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>

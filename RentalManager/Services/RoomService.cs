@@ -10,6 +10,7 @@ public class RoomService : CrudService<Room>
 {
     public override Room Save(Room entity)
     {
+        entity.RoomName = entity.RoomName.Trim();
         entity.Property = null;
         entity.RoomTenants.Clear();
         return base.Save(entity);
@@ -59,12 +60,28 @@ public class RoomService : CrudService<Room>
 
         if (string.IsNullOrWhiteSpace(entity.RoomName))
         {
-            throw new ValidationException("Room name is required.");
+            throw new ValidationException("Tên phòng là bắt buộc.");
         }
 
         if (entity.BaseRent < 0)
         {
-            throw new ValidationException("Base rent must be greater than or equal to 0.");
+            throw new ValidationException("Tiền phòng phải lớn hơn hoặc bằng 0.");
+        }
+
+        using var db = DbContextFactory.Create();
+        var normalizedRoomName = entity.RoomName.Trim();
+        var duplicateExists = db.Rooms
+            .AsNoTracking()
+            .Where(x => x.PropertyId == entity.PropertyId)
+            .Select(x => new { x.Id, x.RoomName })
+            .AsEnumerable()
+            .Any(x =>
+                (entity.Id == 0 || x.Id != entity.Id) &&
+                string.Equals(x.RoomName.Trim(), normalizedRoomName, StringComparison.OrdinalIgnoreCase));
+
+        if (duplicateExists)
+        {
+            throw new ValidationException("Phòng này đã tồn tại trong nhà / khu trọ đã chọn.");
         }
     }
 }

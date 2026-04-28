@@ -11,4 +11,14 @@ public class Tenant
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
     public ICollection<RoomTenant> RoomTenants { get; set; } = new List<RoomTenant>();
+    public string AssignmentDisplayText
+    {
+        get
+        {
+            var details = new[] { Phone, IdentityNumber }
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+            var suffix = string.Join(" - ", details);
+            return string.IsNullOrWhiteSpace(suffix) ? FullName : $"{FullName} - {suffix}";
+        }
+    }
 }

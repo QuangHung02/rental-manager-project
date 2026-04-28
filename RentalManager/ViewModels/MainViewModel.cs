@@ -74,31 +74,35 @@ public class MainViewModel : ViewModelBase
     private bool _roomFeeEnabledOnly = true;
     private int _assignmentFilterPropertyId;
     private int _assignmentFilterRoomId;
+    private int _assignmentNewPropertyId;
+    private string _assignmentTenantSearchText = string.Empty;
+    private Tenant? _selectedAssignmentTenant;
+    private bool _isUpdatingAssignmentTenantText;
     private DateTime _assignmentEndDate = DateTime.Today;
 
     public MainViewModel()
     {
         DbContextFactory.EnsureDatabase();
-        AddPropertyCommand = new RelayCommand(() => Run(AddProperty));
+        AddPropertyCommand = new RelayCommand(() => Run(AddProperty), () => NewProperty.Id == 0);
         SavePropertyCommand = new RelayCommand(() => Run(SaveProperty), () => NewProperty.Id > 0);
         EditPropertyCommand = new RelayCommand(() => Run(EditProperty), () => SelectedProperty is not null);
         DeactivatePropertyCommand = new RelayCommand(() => Run(DeactivateProperty), () => SelectedProperty is not null);
-        AddRoomCommand = new RelayCommand(() => Run(AddRoom));
+        AddRoomCommand = new RelayCommand(() => Run(AddRoom), () => NewRoom.Id == 0);
         SaveRoomCommand = new RelayCommand(() => Run(SaveRoom), () => NewRoom.Id > 0);
         EditRoomCommand = new RelayCommand(() => Run(EditRoom), () => SelectedRoom is not null);
         DeactivateRoomCommand = new RelayCommand(() => Run(CheckoutRoom), () => SelectedRoom is not null);
-        AddTenantCommand = new RelayCommand(() => Run(AddTenant));
+        AddTenantCommand = new RelayCommand(() => Run(AddTenant), () => NewTenant.Id == 0);
         SaveTenantCommand = new RelayCommand(() => Run(SaveTenant), () => NewTenant.Id > 0);
         EditTenantCommand = new RelayCommand(() => Run(EditTenant), () => SelectedTenant is not null);
         AssignTenantCommand = new RelayCommand(() => Run(AssignTenant));
         EndAssignmentRowCommand = new RelayCommand<RoomTenant>(assignment => Run(() => EndAssignment(assignment)));
         ChangeRoomRowCommand = new RelayCommand<RoomTenant>(assignment => Run(() => ChangeRoom(assignment)));
         SetRepresentativeRowCommand = new RelayCommand<RoomTenant>(assignment => Run(() => SetRepresentative(assignment)));
-        AddFeeTypeCommand = new RelayCommand(() => Run(AddFeeType));
+        AddFeeTypeCommand = new RelayCommand(() => Run(AddFeeType), () => NewFeeType.Id == 0);
         SaveFeeTypeCommand = new RelayCommand(() => Run(SaveFeeType), () => NewFeeType.Id > 0);
         EditFeeTypeCommand = new RelayCommand(() => Run(EditFeeType), () => SelectedFeeType is not null);
         DeactivateFeeTypeCommand = new RelayCommand(() => Run(DeactivateFeeType), () => SelectedFeeType is not null);
-        AddRoomFeeConfigCommand = new RelayCommand(() => Run(AddRoomFeeConfig));
+        AddRoomFeeConfigCommand = new RelayCommand(() => Run(AddRoomFeeConfig), () => NewRoomFeeConfig.Id == 0);
         SaveRoomFeeConfigCommand = new RelayCommand(() => Run(SaveRoomFeeConfig), () => NewRoomFeeConfig.Id > 0);
         EditRoomFeeConfigCommand = new RelayCommand(() => Run(EditRoomFeeConfig), () => SelectedRoomFeeConfig is not null);
         DisableRoomFeeConfigCommand = new RelayCommand(() => Run(DisableRoomFeeConfig), () => SelectedRoomFeeConfig is not null);
@@ -116,6 +120,11 @@ public class MainViewModel : ViewModelBase
         SeedDemoDataCommand = new RelayCommand(() => Run(SeedDemoData));
         ApplyFiltersCommand = new RelayCommand(RefreshAllFilters);
         ClearFiltersCommand = new RelayCommand(ClearFilters);
+        CancelPropertyEditCommand = new RelayCommand(CancelPropertyEdit, () => NewProperty.Id > 0);
+        CancelRoomEditCommand = new RelayCommand(CancelRoomEdit, () => NewRoom.Id > 0);
+        CancelTenantEditCommand = new RelayCommand(CancelTenantEdit, () => NewTenant.Id > 0);
+        CancelFeeTypeEditCommand = new RelayCommand(CancelFeeTypeEdit, () => NewFeeType.Id > 0);
+        CancelRoomFeeConfigEditCommand = new RelayCommand(CancelRoomFeeConfigEdit, () => NewRoomFeeConfig.Id > 0);
         EditPropertyRowCommand = new RelayCommand<Property>(property => Run(() => { SelectedProperty = property; EditProperty(); }));
         DeactivatePropertyRowCommand = new RelayCommand<Property>(property => Run(() => { SelectedProperty = property; DeactivateProperty(); }));
         EditRoomRowCommand = new RelayCommand<Room>(room => Run(() => { SelectedRoom = room; EditRoom(); }));
@@ -143,6 +152,8 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<RoomTenant> RoomTenants { get; } = new();
     public ObservableCollection<RoomTenant> ActiveRoomTenants { get; } = new();
     public ObservableCollection<RoomTenant> FilteredAssignmentHistory { get; } = new();
+    public ObservableCollection<Room> AssignmentRoomOptions { get; } = new();
+    public ObservableCollection<Tenant> AssignmentTenantOptions { get; } = new();
     public ObservableCollection<FeeType> FeeTypes { get; } = new();
     public ObservableCollection<RoomFeeConfig> RoomFeeConfigs { get; } = new();
     public ObservableCollection<RoomFeeConfig> FilteredRoomFeeConfigs { get; } = new();
@@ -174,7 +185,7 @@ public class MainViewModel : ViewModelBase
 
     public IReadOnlyList<string> DashboardRangeOptions { get; } = new[] { "Tháng hiện tại", "3 tháng gần nhất", "6 tháng gần nhất", "Năm hiện tại", "Tùy chọn tháng" };
     public IReadOnlyList<int> MonthOptions { get; } = Enumerable.Range(1, 12).ToList();
-    public IReadOnlyList<int> YearOptions { get; } = Enumerable.Range(DateTime.Today.Year - 5, 11).ToList();
+    public ObservableCollection<int> YearOptions { get; } = new();
     public IReadOnlyList<string> RoomStatusFilterOptions { get; } = new[] { "Tất cả", "Đang cho thuê", "Đang trống" };
     public IReadOnlyList<string> TenantStatusFilterOptions { get; } = new[] { "Tất cả", "Đang thuê", "Chưa phân phòng", "Đã từng thuê" };
     public IReadOnlyList<string> AssignmentHistoryFilterOptions { get; } = new[] { "Đã kết thúc", "Đang thuê", "Tất cả" };
@@ -337,6 +348,58 @@ public class MainViewModel : ViewModelBase
             {
                 RefreshAssignmentFilters();
             }
+        }
+    }
+
+    public int AssignmentNewPropertyId
+    {
+        get => _assignmentNewPropertyId;
+        set
+        {
+            if (SetProperty(ref _assignmentNewPropertyId, value))
+            {
+                RefreshAssignmentRoomOptions();
+            }
+        }
+    }
+
+    public string AssignmentTenantSearchText
+    {
+        get => _assignmentTenantSearchText;
+        set
+        {
+            if (SetProperty(ref _assignmentTenantSearchText, value))
+            {
+                if (_isUpdatingAssignmentTenantText)
+                {
+                    return;
+                }
+
+                RefreshAssignmentTenantOptions();
+                ClearAssignmentTenantSelectionIfTextNoLongerMatches();
+            }
+        }
+    }
+
+    public Tenant? SelectedAssignmentTenant
+    {
+        get => _selectedAssignmentTenant;
+        set
+        {
+            if (!SetProperty(ref _selectedAssignmentTenant, value))
+            {
+                return;
+            }
+
+            NewRoomTenant.TenantId = value?.Id ?? 0;
+            OnPropertyChanged(nameof(NewRoomTenant));
+
+            if (value is null)
+            {
+                return;
+            }
+
+            SetAssignmentTenantSearchText(value.AssignmentDisplayText);
         }
     }
 
@@ -569,6 +632,11 @@ public class MainViewModel : ViewModelBase
     public RelayCommand SeedDemoDataCommand { get; }
     public RelayCommand ApplyFiltersCommand { get; }
     public RelayCommand ClearFiltersCommand { get; }
+    public RelayCommand CancelPropertyEditCommand { get; }
+    public RelayCommand CancelRoomEditCommand { get; }
+    public RelayCommand CancelTenantEditCommand { get; }
+    public RelayCommand CancelFeeTypeEditCommand { get; }
+    public RelayCommand CancelRoomFeeConfigEditCommand { get; }
     public RelayCommand RefreshCommand { get; }
     public RelayCommand<Property> EditPropertyRowCommand { get; }
     public RelayCommand<Property> DeactivatePropertyRowCommand { get; }
@@ -590,13 +658,16 @@ public class MainViewModel : ViewModelBase
         Replace(Properties, _propertyService.GetAll());
         Replace(PropertyFilterOptions, new[] { new PropertyFilterOption { Id = 0, Name = "Tất cả nhà / khu trọ" } }.Concat(Properties.Select(x => new PropertyFilterOption { Id = x.Id, Name = x.Name })));
         Replace(Rooms, _roomService.GetAll());
+        RefreshAssignmentRoomOptions();
         Replace(Tenants, _tenantService.GetAll());
+        RefreshAssignmentTenantOptions();
         Replace(RoomTenants, _roomTenantService.GetAll());
         Replace(FeeTypes, _feeTypeService.GetAll());
         Replace(RoomFeeConfigs, _roomFeeConfigService.GetAll());
         Replace(MeterReadings, _meterReadingService.GetAll());
         Replace(Invoices, _invoiceService.GetAll());
         Replace(Payments, _paymentService.GetAll());
+        UpdateYearOptions();
         Replace(InvoiceReadinessRows, _invoiceService.GetReadiness(BillingMonth));
         RefreshAllFilters();
         LoadDashboard();
@@ -647,6 +718,12 @@ public class MainViewModel : ViewModelBase
         Load();
     }
 
+    private void CancelPropertyEdit()
+    {
+        NewProperty = new Property();
+        NotifyFormModes();
+    }
+
     private void AddRoom()
     {
         NewRoom.Id = 0;
@@ -692,6 +769,12 @@ public class MainViewModel : ViewModelBase
             : "Phòng đã được chuyển sang trạng thái đang trống.";
     }
 
+    private void CancelRoomEdit()
+    {
+        NewRoom = new Room();
+        NotifyFormModes();
+    }
+
     private void AddTenant()
     {
         NewTenant.Id = 0;
@@ -717,10 +800,44 @@ public class MainViewModel : ViewModelBase
         NotifyFormModes();
     }
 
+    private void CancelTenantEdit()
+    {
+        NewTenant = new Tenant();
+        NotifyFormModes();
+    }
+
     private void AssignTenant()
     {
+        if (AssignmentNewPropertyId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn nhà / khu trọ.");
+        }
+
+        if (NewRoomTenant.RoomId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
+
+        var selectedRoom = Rooms.FirstOrDefault(x => x.Id == NewRoomTenant.RoomId);
+        if (selectedRoom is null || selectedRoom.PropertyId != AssignmentNewPropertyId)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
+
+        if (SelectedAssignmentTenant is null ||
+            NewRoomTenant.TenantId <= 0 ||
+            SelectedAssignmentTenant.Id != NewRoomTenant.TenantId ||
+            !string.Equals(AssignmentTenantSearchText, SelectedAssignmentTenant.AssignmentDisplayText, StringComparison.CurrentCulture))
+        {
+            throw new ValidationException("Vui lòng chọn người thuê hợp lệ.");
+        }
+
         _roomTenantService.Save(NewRoomTenant);
         NewRoomTenant = new RoomTenant();
+        AssignmentNewPropertyId = 0;
+        SelectedAssignmentTenant = null;
+        SetAssignmentTenantSearchText(string.Empty);
+        RefreshAssignmentRoomOptions();
         OnPropertyChanged(nameof(NewRoomTenant));
         Load();
     }
@@ -794,6 +911,12 @@ public class MainViewModel : ViewModelBase
         Load();
     }
 
+    private void CancelFeeTypeEdit()
+    {
+        NewFeeType = new FeeType();
+        NotifyFormModes();
+    }
+
     private void AddRoomFeeConfig()
     {
         NewRoomFeeConfig.Id = 0;
@@ -824,6 +947,12 @@ public class MainViewModel : ViewModelBase
         if (SelectedRoomFeeConfig is null) throw new ValidationException("Chọn cấu hình phí trước.");
         _roomFeeConfigService.Disable(SelectedRoomFeeConfig.Id);
         Load();
+    }
+
+    private void CancelRoomFeeConfigEdit()
+    {
+        NewRoomFeeConfig = new RoomFeeConfig();
+        NotifyFormModes();
     }
 
     private void AddMeterReading()
@@ -1044,6 +1173,42 @@ public class MainViewModel : ViewModelBase
         }
     }
 
+    private void UpdateYearOptions()
+    {
+        var currentYear = DateTime.Today.Year;
+        var minYear = currentYear - 1;
+        var maxYear = currentYear + 2;
+
+        var dataYears = Invoices
+            .Select(x => ParseBillingYear(x.BillingMonth))
+            .Concat(MeterReadings.Select(x => ParseBillingYear(x.BillingMonth)))
+            .Concat(Payments.Select(x => x.PaymentDate.Year))
+            .Where(x => x > 0)
+            .ToList();
+
+        if (dataYears.Count > 0)
+        {
+            minYear = Math.Min(minYear, dataYears.Min());
+        }
+
+        var years = Enumerable.Range(minYear, maxYear - minYear + 1).ToList();
+        if (YearOptions.SequenceEqual(years))
+        {
+            return;
+        }
+
+        Replace(YearOptions, years);
+    }
+
+    private static int ParseBillingYear(string? billingMonth)
+    {
+        return !string.IsNullOrWhiteSpace(billingMonth) &&
+               billingMonth.Length >= 4 &&
+               int.TryParse(billingMonth[..4], out var year)
+            ? year
+            : 0;
+    }
+
     private void ClearFilters()
     {
         RoomSearch = string.Empty;
@@ -1078,6 +1243,67 @@ public class MainViewModel : ViewModelBase
         RoomFeeFeeTypeFilterId = 0;
         RoomFeeStatusFilter = "Đang áp dụng";
         RefreshAllFilters();
+    }
+
+    private void RefreshAssignmentRoomOptions()
+    {
+        var rooms = AssignmentNewPropertyId <= 0
+            ? new List<Room>()
+            : Rooms
+                .Where(x => x.Status is RoomStatus.Occupied or RoomStatus.Vacant)
+                .Where(x => x.PropertyId == AssignmentNewPropertyId)
+                .OrderBy(x => x.PropertyName)
+                .ThenBy(x => x.RoomName)
+                .ToList();
+
+        Replace(AssignmentRoomOptions, rooms);
+
+        if (NewRoomTenant.RoomId > 0 && rooms.All(x => x.Id != NewRoomTenant.RoomId))
+        {
+            NewRoomTenant.RoomId = 0;
+            OnPropertyChanged(nameof(NewRoomTenant));
+        }
+    }
+
+    private void RefreshAssignmentTenantOptions()
+    {
+        var text = AssignmentTenantSearchText.Trim();
+        var tenants = Tenants.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            tenants = tenants.Where(x => TenantMatchesSearch(x, text));
+        }
+
+        Replace(AssignmentTenantOptions, tenants.OrderBy(x => x.FullName).ThenBy(x => x.Phone));
+    }
+
+    private void SetAssignmentTenantSearchText(string text)
+    {
+        try
+        {
+            _isUpdatingAssignmentTenantText = true;
+            AssignmentTenantSearchText = text;
+        }
+        finally
+        {
+            _isUpdatingAssignmentTenantText = false;
+        }
+    }
+
+    private void ClearAssignmentTenantSelectionIfTextNoLongerMatches()
+    {
+        if (SelectedAssignmentTenant is null)
+        {
+            return;
+        }
+
+        if (string.Equals(AssignmentTenantSearchText, SelectedAssignmentTenant.AssignmentDisplayText, StringComparison.CurrentCulture))
+        {
+            return;
+        }
+
+        SelectedAssignmentTenant = null;
     }
 
     private void RefreshAllFilters()
@@ -1282,20 +1508,30 @@ public class MainViewModel : ViewModelBase
 
     private void RaiseCommandStates()
     {
+        AddPropertyCommand.RaiseCanExecuteChanged();
         SavePropertyCommand.RaiseCanExecuteChanged();
         EditPropertyCommand.RaiseCanExecuteChanged();
         DeactivatePropertyCommand.RaiseCanExecuteChanged();
+        CancelPropertyEditCommand.RaiseCanExecuteChanged();
+        AddRoomCommand.RaiseCanExecuteChanged();
         SaveRoomCommand.RaiseCanExecuteChanged();
         EditRoomCommand.RaiseCanExecuteChanged();
         DeactivateRoomCommand.RaiseCanExecuteChanged();
+        CancelRoomEditCommand.RaiseCanExecuteChanged();
+        AddTenantCommand.RaiseCanExecuteChanged();
         SaveTenantCommand.RaiseCanExecuteChanged();
         EditTenantCommand.RaiseCanExecuteChanged();
+        CancelTenantEditCommand.RaiseCanExecuteChanged();
+        AddFeeTypeCommand.RaiseCanExecuteChanged();
         SaveFeeTypeCommand.RaiseCanExecuteChanged();
         EditFeeTypeCommand.RaiseCanExecuteChanged();
         DeactivateFeeTypeCommand.RaiseCanExecuteChanged();
+        CancelFeeTypeEditCommand.RaiseCanExecuteChanged();
+        AddRoomFeeConfigCommand.RaiseCanExecuteChanged();
         SaveRoomFeeConfigCommand.RaiseCanExecuteChanged();
         EditRoomFeeConfigCommand.RaiseCanExecuteChanged();
         DisableRoomFeeConfigCommand.RaiseCanExecuteChanged();
+        CancelRoomFeeConfigEditCommand.RaiseCanExecuteChanged();
         IssueInvoiceCommand.RaiseCanExecuteChanged();
         RecordPaymentCommand.RaiseCanExecuteChanged();
         FillRemainingPaymentCommand.RaiseCanExecuteChanged();
@@ -1311,6 +1547,14 @@ public class MainViewModel : ViewModelBase
     private static bool Contains(string? value, string search)
     {
         return value?.Contains(search, StringComparison.CurrentCultureIgnoreCase) == true;
+    }
+
+    private static bool TenantMatchesSearch(Tenant tenant, string search)
+    {
+        return Contains(tenant.FullName, search) ||
+               Contains(tenant.Phone, search) ||
+               Contains(tenant.IdentityNumber, search) ||
+               Contains(tenant.AssignmentDisplayText, search);
     }
 
     private bool HasActiveAssignment(Tenant tenant)

@@ -30,7 +30,7 @@ public partial class RoomTransferDialog : Window
         PropertyCombo.DisplayMemberPath = nameof(PropertyModel.Name);
         PropertyCombo.SelectedValuePath = nameof(PropertyModel.Id);
 
-        RoomCombo.DisplayMemberPath = nameof(Room.RoomName);
+        RoomCombo.DisplayMemberPath = nameof(Room.DisplayNameWithProperty);
         RoomCombo.SelectedValuePath = nameof(Room.Id);
 
         var currentPropertyId = assignment.Room?.PropertyId;
@@ -61,9 +61,15 @@ public partial class RoomTransferDialog : Window
 
     private void Confirm_Click(object sender, RoutedEventArgs e)
     {
+        if (PropertyCombo.SelectedValue is not int propertyId || propertyId <= 0)
+        {
+            MessageBox.Show("Vui lòng chọn nhà / khu trọ.", "Chuyển phòng", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (RoomCombo.SelectedValue is not int roomId || roomId <= 0)
         {
-            MessageBox.Show("Vui lòng chọn phòng mới.", "Chuyển phòng", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Vui lòng chọn phòng.", "Chuyển phòng", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

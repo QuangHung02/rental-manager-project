@@ -20,6 +20,7 @@ public class Room
     public ICollection<MeterReading> MeterReadings { get; set; } = new List<MeterReading>();
     public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     public string PropertyName => Property?.Name ?? string.Empty;
+    public string DisplayNameWithProperty => string.IsNullOrWhiteSpace(PropertyName) ? RoomName : $"{PropertyName} - {RoomName}";
     public string RepresentativeTenantName => RoomTenants.FirstOrDefault(x => x.IsRepresentative && x.Status == Enums.RoomTenantStatus.Active)?.Tenant?.FullName ?? string.Empty;
     public string StatusText => DisplayText.For(Status);
 }
