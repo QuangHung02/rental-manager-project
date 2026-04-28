@@ -16,4 +16,5 @@ public class FeeType
     public string CalculationTypeText => DisplayText.For(DefaultCalculationType);
     public string SystemStatusText => IsSystem ? "Mặc định" : "Tùy chỉnh";
     public string ActiveStatusText => IsActive ? "Đang dùng" : "Ngừng dùng";
+    public string ToggleActionText => IsActive ? "Ngừng" : "Bật lại";
 }

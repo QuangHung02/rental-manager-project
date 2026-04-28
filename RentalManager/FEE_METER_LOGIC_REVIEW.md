@@ -1,6 +1,31 @@
 # Fee / Room Fee / Meter Reading Logic Review
 
-Baseline: this is a review only. No database schema, invoice calculation, or payment logic changes are included here.
+Baseline: this review tracks fee and meter behavior. Invoice calculation and payment logic are intentionally unchanged in the current iteration.
+
+## Status Update
+
+Fixed in this iteration:
+
+- Prevent duplicate enabled `RoomFeeConfig` records for the same room and fee type.
+- Keep old disabled room fee configs visible for history/audit.
+- Filter the meter reading fee selector to only enabled meter-based configs for the selected room.
+- Save meter readings using only enabled meter-based room fee configs for unit price lookup.
+- Block meter reading save when the selected room does not have an enabled meter-based config for that fee.
+- Show room choices as `Nhà / khu trọ - Phòng` in the Room Fee Config screen.
+- Hide irrelevant Room Fee Config amount fields based on calculation type.
+- Auto-fill previous meter reading when room, meter fee, or billing month changes, while keeping it editable.
+- Upsert meter readings by room, fee type, and billing month to avoid duplicates.
+- Block invoice generation when an enabled meter-based fee is missing a reading for the billing period.
+- Room Fee Config filter and form room dropdowns are now property-scoped.
+- Meter Reading form now loads an existing same-period reading into the form for editing.
+- Room Fee Config status filtering now uses only the visible status selector. `Tất cả` includes enabled and disabled records.
+- Room Fee Config table was compacted to show room, fee type, calculation type, applied price, status, and actions.
+- Room Fee Config pricing now supports `Dùng giá mặc định` without schema changes. Null `UnitPrice`/`FixedAmount` means follow `FeeType.DefaultUnitPrice`; non-null means custom room price.
+
+Still pending:
+
+- Add system fee type edit/deactivate guardrails.
+- Add more descriptive inline help for calculation types if needed.
 
 ## 1. Loại phí
 
@@ -14,8 +39,6 @@ Baseline: this is a review only. No database schema, invoice calculation, or pay
 
 ### Default fee types
 
-Current seeded defaults are:
-
 - Electricity: `Meter`, unit `kWh`, default unit price `3,500`.
 - Water: `PerPerson`, unit `person`, default unit price `100,000`.
 - Wifi: `Fixed`, unit `month`, default unit price `0`.
@@ -23,7 +46,7 @@ Current seeded defaults are:
 - Garbage: `Fixed`, unit `month`, default unit price `0`.
 - Other: `Manual`, no unit, default unit price `0`.
 
-These defaults match the project spec and common landlord usage. The only usability issue is that English internal names are seeded and then translated for display by `DisplayText.FeeName`.
+These defaults match the project spec and common landlord usage.
 
 ### Editing effects on old invoices
 
@@ -43,17 +66,15 @@ Recommendation: keep system fee types visible but restrict risky edits later. Al
 
 Each room can have multiple `RoomFeeConfig` records. A config points to one room and one fee type, has its own calculation type, optional unit price, optional fixed amount, optional quantity, and enabled flag.
 
-### Duplicate config risk
+### Duplicate config handling
 
-Current validation checks only:
+Fixed: the app now prevents more than one enabled config for the same room and fee type.
 
-- Room is selected.
-- Fee type is selected.
-- Unit price, fixed amount, and quantity are not negative.
+Allowed: old disabled configs remain visible and can coexist for audit/history.
 
-It does not prevent duplicate enabled configs for the same room and fee type. This can charge the same fee twice on a generated invoice if two enabled configs exist.
+Validation message:
 
-Recommended future fix: prevent more than one enabled config per room and fee type. If historical disabled configs should remain, allow duplicates only when old ones are disabled.
+`Phòng này đã có cấu hình phí đang áp dụng cho loại phí đã chọn.`
 
 ### Enabled / disabled behavior
 
@@ -67,35 +88,39 @@ Invoice generation uses only enabled configs. Disabled configs remain visible in
 - `PerUnit`: uses quantity and unit price.
 - `Manual`: uses fixed amount.
 
-### UI clarity risk
+### UI clarity
 
-The UI currently shows `Đơn giá`, `Cố định`, and `Số lượng` for every calculation type. This can confuse users because some fields are irrelevant depending on the type.
+Fixed: the Room Fee Config form now shows only fields relevant to the selected calculation type.
 
-Recommended future UI behavior:
+Fixed: room selection is property-first. The filter room dropdown follows the selected property, and the add/edit form requires a property before selecting a room.
 
-- `Fixed`: show `Cố định`, hide or de-emphasize `Đơn giá` and `Số lượng`.
+Fixed: `Tất cả` no longer applies a hidden enabled-only filter. Disabled configs are visible when the selected status allows them.
+
+Fixed: Room Fee Config can now explicitly follow the FeeType default price again. Existing non-null prices remain custom prices for backward compatibility.
+
+Current UI behavior:
+
+- `Fixed`: show `Cố định`.
 - `Meter`: show `Đơn giá`, hide `Cố định` and `Số lượng`.
 - `PerPerson`: show `Đơn giá`, hide `Cố định` and `Số lượng`.
-- `PerUnit`: show `Đơn giá` and `Số lượng`, hide `Cố định`.
-- `Manual`: show `Cố định`, hide `Đơn giá` and `Số lượng`.
+- `PerUnit`: show `Đơn giá` and `Số lượng`.
+- `Manual`: show `Cố định`.
+
+Validation now follows the selected calculation type, and hidden fields are normalized before saving so they do not affect later calculations.
 
 ## 3. Chỉ số điện nước
 
 ### Required only for meter-based fees
 
-Readiness checks look at enabled room fee configs where `CalculationType == Meter`. This correctly limits missing-reading detection to meter-based fees.
+Fixed: the meter reading input fee selector now shows only active fee types that have an enabled meter-based room fee config for the selected room.
 
-Risk: the meter reading input screen currently lets the user choose any fee type, including non-meter fees. Saving a reading for Water or Wifi is possible if selected manually. That data may not be used by invoices, but it can confuse users.
-
-Recommended future fix: filter the meter reading fee dropdown to meter-based fee types/configs for the selected room.
+This prevents users from entering readings for Water, Wifi, or other non-meter fees unless those fees are explicitly configured as meter-based for that room.
 
 ### Previous reading auto-fill
 
-When saving a reading, `MainViewModel.AddMeterReading` fills `PreviousReading` from the latest earlier reading only if `PreviousReading == 0`.
+Fixed: previous reading is now auto-filled when the user changes room, meter fee, or billing month/year. The value remains editable manually.
 
-This works for common cases, but has one edge case: if a valid previous reading is actually 0, the app cannot distinguish between "user typed 0" and "not filled yet." That is usually acceptable for early usage.
-
-Recommended future UX improvement: auto-fill previous reading when room, fee type, or billing month changes, instead of waiting until save.
+Fixed: if a reading already exists for the selected room, fee type, and billing month, the form loads that existing reading for editing instead of starting a new one. If no same-period reading exists, only `PreviousReading` is filled from the latest earlier reading and `CurrentReading` stays empty/default.
 
 ### Current reading validation
 
@@ -107,68 +132,89 @@ This is correct.
 
 ### Amount calculation
 
+Fixed: the service now calculates meter readings using only enabled meter-based room fee configs.
+
 The service calculates:
 
 - `UsageAmount = CurrentReading - PreviousReading`
-- `UnitPriceSnapshot = RoomFeeConfig.UnitPrice ?? FeeType.DefaultUnitPrice`
+- `UnitPriceSnapshot = enabled meter RoomFeeConfig.UnitPrice ?? FeeType.DefaultUnitPrice`
 - `Amount = UsageAmount * UnitPriceSnapshot`
 
-This matches the spec.
+If no enabled meter-based config exists, saving is blocked with:
 
-Risk: the service selects the first room fee config for room and fee type, without requiring it to be enabled or meter-based. If duplicate configs exist, the wrong unit price could be used.
+`Vui lòng chọn loại phí theo chỉ số đang áp dụng cho phòng.`
 
 ### Missing readings before invoice generation
 
 `InvoiceService.GetReadiness` detects missing readings for enabled meter configs before generation and shows `Thiếu chỉ số`. `GenerateReady` only generates rooms marked `Đủ dữ liệu`.
 
-Risk: direct single-room invoice generation still builds a draft invoice even if a meter reading is missing; the calculation item becomes amount 0 with English note `Missing meter reading`. This should be reviewed later, but not changed in this iteration because invoice calculation logic is out of scope.
+Fixed: direct invoice generation now blocks missing meter readings instead of creating a zero-amount invoice item.
+
+Validation message:
+
+`Phòng này còn thiếu chỉ số điện/nước cho kỳ hóa đơn đã chọn.`
 
 ## 4. Risks or Bugs to Test Manually
 
-High priority:
+High priority now fixed, but should be verified:
 
-- Create two enabled fee configs for the same room and same fee type, then generate a draft invoice. Check whether the fee is duplicated.
-- Create a meter reading for a non-meter fee type and confirm whether it appears in screens or affects reports.
-- Create duplicate room fee configs with different unit prices, then save a meter reading. Confirm which unit price becomes `UnitPriceSnapshot`.
-- Generate a single-room invoice when a meter reading is missing. Confirm the invoice item amount and note.
+- Create two enabled fee configs for the same room and same fee type. The second enabled config should be blocked.
+- Disable the old config, then create a new enabled config for the same room and fee type. This should be allowed.
+- Select a room without enabled meter configs in the meter reading screen. The fee dropdown should be empty.
+- Select a room with an enabled meter config. Only that meter fee should appear.
+- Save a meter reading and confirm `UnitPriceSnapshot` comes from the enabled meter config.
+- Save a reading twice for the same room, fee type, and month. Confirm the existing reading is updated instead of duplicated.
+- Generate an invoice for a room that is missing a required meter reading. Confirm invoice generation is blocked with Vietnamese validation.
+- In Room Fee Config, choose a property and confirm the room dropdown only shows rooms from that property.
+- In Room Fee Config, set status to `Tất cả` and confirm disabled configs are visible.
+- Try adding a fee that already exists as disabled and confirm the app tells the user to switch filters and edit/reactivate the existing row.
+- In Room Fee Config, check `Dùng giá mặc định` and confirm the applied price column shows `(mặc định)`.
+- Uncheck `Dùng giá mặc định`, enter a custom price, and confirm the applied price column shows `(riêng)`.
+- In Meter Reading, select a room + fee + month with an existing reading and confirm previous/current/note load into the form.
 
-Medium priority:
+Still pending:
 
 - Edit a fee type default unit price after an invoice exists. Confirm old invoice items keep their old values.
 - Disable a room fee config, then generate the next invoice. Confirm the disabled config is excluded.
 - Change the active tenant count for a room, then generate a per-person fee invoice.
-
-Low priority:
-
 - Edit a system fee type name/calculation type and confirm display translations still make sense.
 - Save a reading where previous and current are equal. Confirm usage and amount are 0.
 
 ## 5. Recommended Improvements
 
-High priority:
+Completed:
 
 - Prevent duplicate enabled room fee configs for the same room and fee type.
 - Filter meter reading fee choices to only meter-based enabled configs for the selected room.
 - Use only enabled meter configs when calculating meter reading unit price.
-- Replace the English invoice item note `Missing meter reading` with Vietnamese if this path remains allowed.
+- Show contextual room names in Room Fee Config dropdowns/tables.
+- Hide irrelevant Room Fee Config fields by calculation type.
+- Auto-fill previous meter reading before save.
+- Upsert meter readings by room, fee type, and billing month.
+- Block invoice generation when a required meter reading is missing.
 
-Medium priority:
+Pending medium priority:
 
-- Hide irrelevant room fee fields based on calculation type.
-- Auto-fill previous reading when the user changes room, fee type, or billing month.
 - Add clearer Vietnamese validation for fee type name and default unit price.
 
-Low priority:
+Pending low priority:
 
 - Add guardrails around editing or deactivating system fee types.
 - Add explanatory labels for each calculation type.
 
 ## 6. Suggested Implementation Order
 
+Completed:
+
 1. Add duplicate enabled room fee config validation.
 2. Filter meter reading selection to room-specific meter configs.
 3. Make meter reading unit-price lookup use enabled meter configs only.
-4. Add dynamic field visibility for room fee config form.
-5. Auto-fill previous reading before save.
-6. Add system fee type guardrails.
-7. Review direct single-room invoice behavior for missing meter readings in a later invoice-focused iteration.
+4. Review direct single-room invoice behavior for missing meter readings.
+5. Add dynamic field visibility for room fee config form.
+6. Auto-fill previous reading before save.
+7. Upsert duplicate meter readings by room, fee type, and month.
+
+Next:
+
+8. Add system fee type guardrails.
+9. Add clearer fee type validation/help text.

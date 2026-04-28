@@ -16,11 +16,11 @@ public class FeeTypeService : CrudService<FeeType>
         return base.Save(entity);
     }
 
-    public void Deactivate(int id)
+    public void ToggleActive(int id)
     {
         using var db = DbContextFactory.Create();
-        var feeType = db.FeeTypes.Find(id) ?? throw new ValidationException("Fee type was not found.");
-        feeType.IsActive = false;
+        var feeType = db.FeeTypes.Find(id) ?? throw new ValidationException("Không tìm thấy loại phí đã chọn.");
+        feeType.IsActive = !feeType.IsActive;
         db.SaveChanges();
     }
 

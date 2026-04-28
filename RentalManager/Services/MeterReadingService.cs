@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RentalManager.Data;
+using RentalManager.Enums;
 using RentalManager.Helpers;
 using RentalManager.Models;
 
@@ -26,8 +27,18 @@ public class MeterReadingService : CrudService<MeterReading>
         }
 
         var feeType = db.FeeTypes.Find(entity.FeeTypeId) ?? throw new ValidationException("Không tìm thấy loại phí đã chọn.");
-        var config = db.RoomFeeConfigs.FirstOrDefault(x => x.RoomId == entity.RoomId && x.FeeTypeId == entity.FeeTypeId);
-        var unitPrice = config?.UnitPrice ?? feeType.DefaultUnitPrice;
+        var config = db.RoomFeeConfigs.FirstOrDefault(x =>
+            x.RoomId == entity.RoomId &&
+            x.FeeTypeId == entity.FeeTypeId &&
+            x.Enabled &&
+            x.CalculationType == CalculationType.Meter);
+
+        if (config is null)
+        {
+            throw new ValidationException("Vui lòng chọn loại phí theo chỉ số đang áp dụng cho phòng.");
+        }
+
+        var unitPrice = config.UnitPrice ?? feeType.DefaultUnitPrice;
 
         if (entity.CurrentReading < entity.PreviousReading)
         {
@@ -38,17 +49,32 @@ public class MeterReadingService : CrudService<MeterReading>
         entity.UsageAmount = entity.CurrentReading - entity.PreviousReading;
         entity.Amount = entity.UsageAmount * unitPrice;
 
-        if (entity.Id == 0)
+        var existing = entity.Id == 0
+            ? db.MeterReadings.FirstOrDefault(x =>
+                x.RoomId == entity.RoomId &&
+                x.FeeTypeId == entity.FeeTypeId &&
+                x.BillingMonth == entity.BillingMonth)
+            : db.MeterReadings.Find(entity.Id);
+
+        if (existing is null)
         {
             db.MeterReadings.Add(entity);
         }
         else
         {
-            db.MeterReadings.Update(entity);
+            existing.RoomId = entity.RoomId;
+            existing.FeeTypeId = entity.FeeTypeId;
+            existing.BillingMonth = entity.BillingMonth;
+            existing.PreviousReading = entity.PreviousReading;
+            existing.CurrentReading = entity.CurrentReading;
+            existing.UsageAmount = entity.UsageAmount;
+            existing.UnitPriceSnapshot = entity.UnitPriceSnapshot;
+            existing.Amount = entity.Amount;
+            existing.Note = entity.Note;
         }
 
         db.SaveChanges();
-        return entity;
+        return existing ?? entity;
     }
 
     public decimal GetPreviousReading(int roomId, int feeTypeId, string billingMonth)

@@ -55,6 +55,11 @@ public static class ErrorMessageMapper
             return "Dữ liệu đang được sử dụng. Vui lòng đóng thao tác khác rồi thử lại.";
         }
 
+        if (message.Contains("UNIQUE constraint failed: RoomFeeConfigs.RoomId, RoomFeeConfigs.FeeTypeId", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Loại phí này đã tồn tại cho phòng đã chọn. Vui lòng chuyển bộ lọc sang Tất cả hoặc Ngừng áp dụng để chỉnh sửa cấu hình hiện có.";
+        }
+
         if (exception is DbUpdateException or SqliteException)
         {
             return "Không thể lưu dữ liệu. Vui lòng kiểm tra thông tin và thử lại.";

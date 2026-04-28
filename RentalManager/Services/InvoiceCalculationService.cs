@@ -79,16 +79,12 @@ public class InvoiceCalculationService
                 var reading = db.MeterReadings.FirstOrDefault(x => x.RoomId == roomId && x.FeeTypeId == feeType.Id && x.BillingMonth == billingMonth);
                 if (reading is null)
                 {
-                    quantity = 0;
-                    amount = 0;
-                    note = "Missing meter reading";
+                    throw new ValidationException("Phòng này còn thiếu chỉ số điện/nước cho kỳ hóa đơn đã chọn.");
                 }
-                else
-                {
-                    quantity = reading.UsageAmount;
-                    unitPrice = reading.UnitPriceSnapshot;
-                    amount = reading.Amount;
-                }
+
+                quantity = reading.UsageAmount;
+                unitPrice = reading.UnitPriceSnapshot;
+                amount = reading.Amount;
                 break;
             case CalculationType.PerPerson:
                 quantity = activeTenantCount;

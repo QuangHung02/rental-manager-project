@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using Microsoft.Win32;
@@ -67,11 +68,13 @@ public class MainViewModel : ViewModelBase
     private int _meterFilterPropertyId;
     private int _meterFilterRoomId;
     private int _meterFilterFeeTypeId;
-    private string _roomFeeStatusFilter = "Đang áp dụng";
+    private int _newMeterReadingPropertyId;
+    private string _meterReadingHelpMessage = string.Empty;
+    private string _roomFeeStatusFilter = "Tất cả";
     private int _roomFeePropertyFilterId;
     private int _roomFeeRoomFilterId;
     private int _roomFeeFeeTypeFilterId;
-    private bool _roomFeeEnabledOnly = true;
+    private int _newRoomFeePropertyId;
     private int _assignmentFilterPropertyId;
     private int _assignmentFilterRoomId;
     private int _assignmentNewPropertyId;
@@ -155,8 +158,12 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<Room> AssignmentRoomOptions { get; } = new();
     public ObservableCollection<Tenant> AssignmentTenantOptions { get; } = new();
     public ObservableCollection<FeeType> FeeTypes { get; } = new();
+    public ObservableCollection<FeeType> MeterReadingFeeTypeOptions { get; } = new();
+    public ObservableCollection<Room> MeterReadingRoomOptions { get; } = new();
     public ObservableCollection<RoomFeeConfig> RoomFeeConfigs { get; } = new();
     public ObservableCollection<RoomFeeConfig> FilteredRoomFeeConfigs { get; } = new();
+    public ObservableCollection<Room> RoomFeeFilterRoomOptions { get; } = new();
+    public ObservableCollection<Room> RoomFeeFormRoomOptions { get; } = new();
     public ObservableCollection<MeterReading> MeterReadings { get; } = new();
     public ObservableCollection<MeterReading> FilteredMeterReadings { get; } = new();
     public ObservableCollection<Invoice> Invoices { get; } = new();
@@ -252,6 +259,7 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedFeeType, value))
             {
+                OnPropertyChanged(nameof(SelectedFeeTypeToggleActionText));
                 RaiseCommandStates();
             }
         }
@@ -264,6 +272,7 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedRoomFeeConfig, value))
             {
+                OnPropertyChanged(nameof(SelectedRoomFeeToggleActionText));
                 RaiseCommandStates();
             }
         }
@@ -460,7 +469,14 @@ public class MainViewModel : ViewModelBase
     public int RoomFeePropertyFilterId
     {
         get => _roomFeePropertyFilterId;
-        set { if (SetProperty(ref _roomFeePropertyFilterId, value)) RefreshRoomFeeFilters(); }
+        set
+        {
+            if (SetProperty(ref _roomFeePropertyFilterId, value))
+            {
+                RefreshRoomFeeFilterRoomOptions();
+                RefreshRoomFeeFilters();
+            }
+        }
     }
 
     public int RoomFeeRoomFilterId
@@ -475,10 +491,27 @@ public class MainViewModel : ViewModelBase
         set { if (SetProperty(ref _roomFeeFeeTypeFilterId, value)) RefreshRoomFeeFilters(); }
     }
 
-    public bool RoomFeeEnabledOnly
+    public int NewRoomFeeFeeTypeId
     {
-        get => _roomFeeEnabledOnly;
-        set { if (SetProperty(ref _roomFeeEnabledOnly, value)) RefreshRoomFeeFilters(); }
+        get => NewRoomFeeConfig.FeeTypeId;
+        set
+        {
+            if (NewRoomFeeConfig.FeeTypeId == value)
+            {
+                return;
+            }
+
+            NewRoomFeeConfig.FeeTypeId = value;
+            OnPropertyChanged(nameof(NewRoomFeeFeeTypeId));
+            if (!NewRoomFeeUseDefaultPrice)
+            {
+                FillRoomFeeCustomPriceFromDefault();
+            }
+
+            OnPropertyChanged(nameof(NewRoomFeeConfig));
+            OnPropertyChanged(nameof(RoomFeeFormMode));
+            RaiseRoomFeePricingState();
+        }
     }
 
     public string BillingMonth
@@ -534,11 +567,150 @@ public class MainViewModel : ViewModelBase
     public int PaymentFilterRoomId { get => _paymentFilterRoomId; set { if (SetProperty(ref _paymentFilterRoomId, value)) RefreshPaymentFilters(); } }
     public string PaymentFilterMethod { get => _paymentFilterMethod; set { if (SetProperty(ref _paymentFilterMethod, value)) RefreshPaymentFilters(); } }
 
-    public int MeterFilterMonth { get => _meterFilterMonth; set { if (SetProperty(ref _meterFilterMonth, value)) RefreshMeterReadingFilters(); } }
-    public int MeterFilterYear { get => _meterFilterYear; set { if (SetProperty(ref _meterFilterYear, value)) RefreshMeterReadingFilters(); } }
+    public int MeterFilterMonth { get => _meterFilterMonth; set { if (SetProperty(ref _meterFilterMonth, value)) { RefreshMeterReadingFilters(); LoadMeterReadingFormForSelection(); } } }
+    public int MeterFilterYear { get => _meterFilterYear; set { if (SetProperty(ref _meterFilterYear, value)) { RefreshMeterReadingFilters(); LoadMeterReadingFormForSelection(); } } }
     public int MeterFilterPropertyId { get => _meterFilterPropertyId; set { if (SetProperty(ref _meterFilterPropertyId, value)) RefreshMeterReadingFilters(); } }
     public int MeterFilterRoomId { get => _meterFilterRoomId; set { if (SetProperty(ref _meterFilterRoomId, value)) RefreshMeterReadingFilters(); } }
     public int MeterFilterFeeTypeId { get => _meterFilterFeeTypeId; set { if (SetProperty(ref _meterFilterFeeTypeId, value)) RefreshMeterReadingFilters(); } }
+
+    public int NewMeterReadingPropertyId
+    {
+        get => _newMeterReadingPropertyId;
+        set
+        {
+            if (SetProperty(ref _newMeterReadingPropertyId, value))
+            {
+                RefreshMeterReadingRoomOptions();
+            }
+        }
+    }
+
+    public int NewMeterReadingRoomId
+    {
+        get => NewMeterReading.RoomId;
+        set
+        {
+            if (NewMeterReading.RoomId == value)
+            {
+                return;
+            }
+
+            NewMeterReading.RoomId = value;
+            OnPropertyChanged(nameof(NewMeterReadingRoomId));
+            RefreshMeterReadingFeeTypeOptions();
+            LoadMeterReadingFormForSelection();
+        }
+    }
+
+    public int NewMeterReadingFeeTypeId
+    {
+        get => NewMeterReading.FeeTypeId;
+        set
+        {
+            if (NewMeterReading.FeeTypeId == value)
+            {
+                return;
+            }
+
+            NewMeterReading.FeeTypeId = value;
+            OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
+            LoadMeterReadingFormForSelection();
+        }
+    }
+
+    public string MeterReadingHelpMessage
+    {
+        get => _meterReadingHelpMessage;
+        private set => SetProperty(ref _meterReadingHelpMessage, value);
+    }
+
+    public CalculationType NewRoomFeeCalculationType
+    {
+        get => NewRoomFeeConfig.CalculationType;
+        set
+        {
+            if (NewRoomFeeConfig.CalculationType == value)
+            {
+                return;
+            }
+
+            var wasUsingDefault = NewRoomFeeUseDefaultPrice;
+            NewRoomFeeConfig.CalculationType = value;
+            ClearIrrelevantRoomFeePriceFields();
+            if (wasUsingDefault)
+            {
+                ClearRoomFeeCustomPrice();
+            }
+            else
+            {
+                FillRoomFeeCustomPriceFromDefault();
+            }
+
+            OnPropertyChanged(nameof(NewRoomFeeCalculationType));
+            OnPropertyChanged(nameof(RoomFeeFormMode));
+            OnPropertyChanged(nameof(NewRoomFeeConfig));
+            RaiseRoomFeeFieldVisibility();
+            RaiseRoomFeePricingState();
+        }
+    }
+
+    public Visibility RoomFeeUnitPriceVisibility =>
+        NewRoomFeeConfig.CalculationType is CalculationType.Meter or CalculationType.PerPerson or CalculationType.PerUnit
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public Visibility RoomFeeFixedAmountVisibility =>
+        NewRoomFeeConfig.CalculationType is CalculationType.Fixed or CalculationType.Manual
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public Visibility RoomFeeQuantityVisibility =>
+        NewRoomFeeConfig.CalculationType == CalculationType.PerUnit
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public Visibility RoomFeeDefaultPriceVisibility =>
+        NewRoomFeeConfig.CalculationType == CalculationType.Manual
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+    public bool NewRoomFeeUseDefaultPrice
+    {
+        get => NewRoomFeeConfig.CalculationType != CalculationType.Manual && GetRoomFeeCustomPrice() is null;
+        set
+        {
+            if (NewRoomFeeConfig.CalculationType == CalculationType.Manual)
+            {
+                return;
+            }
+
+            if (value)
+            {
+                ClearRoomFeeCustomPrice();
+            }
+            else
+            {
+                FillRoomFeeCustomPriceFromDefault();
+            }
+
+            OnPropertyChanged(nameof(NewRoomFeeConfig));
+            RaiseRoomFeePricingState();
+        }
+    }
+
+    public bool RoomFeeCustomPriceInputEnabled => NewRoomFeeConfig.CalculationType == CalculationType.Manual || !NewRoomFeeUseDefaultPrice;
+
+    public int NewRoomFeePropertyId
+    {
+        get => _newRoomFeePropertyId;
+        set
+        {
+            if (SetProperty(ref _newRoomFeePropertyId, value))
+            {
+                RefreshRoomFeeFormRoomOptions();
+            }
+        }
+    }
 
     public string RoomFeeStatusFilter { get => _roomFeeStatusFilter; set { if (SetProperty(ref _roomFeeStatusFilter, value)) RefreshRoomFeeFilters(); } }
 
@@ -590,7 +762,20 @@ public class MainViewModel : ViewModelBase
     public string RoomFormMode => NewRoom.Id > 0 ? $"Đang sửa: {NewRoom.RoomName}" : "Đang thêm mới";
     public string TenantFormMode => NewTenant.Id > 0 ? $"Đang sửa: {NewTenant.FullName}" : "Đang thêm mới";
     public string FeeTypeFormMode => NewFeeType.Id > 0 ? $"Đang sửa: {NewFeeType.DisplayName}" : "Đang thêm mới";
-    public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? "Đang sửa cấu hình phí" : "Đang thêm mới";
+    public string SelectedFeeTypeToggleActionText => SelectedFeeType?.ToggleActionText ?? "Ngừng";
+    public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? $"Đang sửa: {RoomFeeEditTitle}" : "Đang thêm mới";
+    public string SelectedRoomFeeToggleActionText => SelectedRoomFeeConfig?.ToggleActionText ?? "Ngừng";
+    private string RoomFeeEditTitle
+    {
+        get
+        {
+            var room = Rooms.FirstOrDefault(x => x.Id == NewRoomFeeConfig.RoomId);
+            var feeType = FeeTypes.FirstOrDefault(x => x.Id == NewRoomFeeConfig.FeeTypeId);
+            var roomText = room?.DisplayNameWithProperty ?? "Phòng";
+            var feeText = feeType?.DisplayName ?? "Loại phí";
+            return $"{roomText} - {feeText}";
+        }
+    }
     public string SelectedInvoiceSummary => SelectedInvoice is null
         ? "Chưa chọn hóa đơn"
         : $"{SelectedInvoice.RoomName} - {SelectedInvoice.RepresentativeTenantName} | Tổng: {SelectedInvoice.TotalAmount:N0} | Đã thu: {SelectedInvoice.PaidAmount:N0} | Còn lại: {SelectedInvoice.RemainingAmount:N0}";
@@ -658,6 +843,9 @@ public class MainViewModel : ViewModelBase
         Replace(Properties, _propertyService.GetAll());
         Replace(PropertyFilterOptions, new[] { new PropertyFilterOption { Id = 0, Name = "Tất cả nhà / khu trọ" } }.Concat(Properties.Select(x => new PropertyFilterOption { Id = x.Id, Name = x.Name })));
         Replace(Rooms, _roomService.GetAll());
+        RefreshRoomFeeFilterRoomOptions();
+        RefreshRoomFeeFormRoomOptions();
+        RefreshMeterReadingRoomOptions();
         RefreshAssignmentRoomOptions();
         Replace(Tenants, _tenantService.GetAll());
         RefreshAssignmentTenantOptions();
@@ -665,6 +853,7 @@ public class MainViewModel : ViewModelBase
         Replace(FeeTypes, _feeTypeService.GetAll());
         Replace(RoomFeeConfigs, _roomFeeConfigService.GetAll());
         Replace(MeterReadings, _meterReadingService.GetAll());
+        RefreshMeterReadingFeeTypeOptions();
         Replace(Invoices, _invoiceService.GetAll());
         Replace(Payments, _paymentService.GetAll());
         UpdateYearOptions();
@@ -907,7 +1096,7 @@ public class MainViewModel : ViewModelBase
     private void DeactivateFeeType()
     {
         if (SelectedFeeType is null) throw new ValidationException("Chọn loại phí trước.");
-        _feeTypeService.Deactivate(SelectedFeeType.Id);
+        _feeTypeService.ToggleActive(SelectedFeeType.Id);
         Load();
     }
 
@@ -919,9 +1108,11 @@ public class MainViewModel : ViewModelBase
 
     private void AddRoomFeeConfig()
     {
+        ValidateRoomFeePropertySelection();
         NewRoomFeeConfig.Id = 0;
         _roomFeeConfigService.Save(NewRoomFeeConfig);
         NewRoomFeeConfig = new RoomFeeConfig();
+        NewRoomFeePropertyId = 0;
         NotifyFormModes();
         Load();
     }
@@ -929,8 +1120,10 @@ public class MainViewModel : ViewModelBase
     private void SaveRoomFeeConfig()
     {
         RequireExisting(NewRoomFeeConfig.Id);
+        ValidateRoomFeePropertySelection();
         _roomFeeConfigService.Save(NewRoomFeeConfig);
         NewRoomFeeConfig = new RoomFeeConfig();
+        NewRoomFeePropertyId = 0;
         NotifyFormModes();
         Load();
     }
@@ -939,33 +1132,76 @@ public class MainViewModel : ViewModelBase
     {
         if (SelectedRoomFeeConfig is null) throw new ValidationException("Chọn cấu hình phí trước.");
         NewRoomFeeConfig = new RoomFeeConfig { Id = SelectedRoomFeeConfig.Id, RoomId = SelectedRoomFeeConfig.RoomId, FeeTypeId = SelectedRoomFeeConfig.FeeTypeId, CalculationType = SelectedRoomFeeConfig.CalculationType, UnitPrice = SelectedRoomFeeConfig.UnitPrice, FixedAmount = SelectedRoomFeeConfig.FixedAmount, Quantity = SelectedRoomFeeConfig.Quantity, Enabled = SelectedRoomFeeConfig.Enabled, Note = SelectedRoomFeeConfig.Note };
+        NewRoomFeePropertyId = SelectedRoomFeeConfig.Room?.PropertyId ?? Rooms.FirstOrDefault(x => x.Id == SelectedRoomFeeConfig.RoomId)?.PropertyId ?? 0;
         NotifyFormModes();
     }
 
     private void DisableRoomFeeConfig()
     {
         if (SelectedRoomFeeConfig is null) throw new ValidationException("Chọn cấu hình phí trước.");
-        _roomFeeConfigService.Disable(SelectedRoomFeeConfig.Id);
+        _roomFeeConfigService.ToggleActive(SelectedRoomFeeConfig.Id);
         Load();
+    }
+
+    private void ValidateRoomFeePropertySelection()
+    {
+        if (NewRoomFeePropertyId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn nhà / khu trọ.");
+        }
+
+        if (NewRoomFeeConfig.RoomId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
+
+        var room = Rooms.FirstOrDefault(x => x.Id == NewRoomFeeConfig.RoomId);
+        if (room is null || room.PropertyId != NewRoomFeePropertyId)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
     }
 
     private void CancelRoomFeeConfigEdit()
     {
         NewRoomFeeConfig = new RoomFeeConfig();
+        NewRoomFeePropertyId = 0;
         NotifyFormModes();
     }
 
     private void AddMeterReading()
     {
-        if (NewMeterReading.PreviousReading == 0)
+        if (NewMeterReading.RoomId <= 0)
         {
-            NewMeterReading.PreviousReading = _meterReadingService.GetPreviousReading(NewMeterReading.RoomId, NewMeterReading.FeeTypeId, BillingMonth);
+            throw new ValidationException("Vui lòng chọn phòng.");
         }
 
-        NewMeterReading.BillingMonth = BillingMonth;
+        if (NewMeterReadingPropertyId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn nhà / khu trọ.");
+        }
+
+        var room = Rooms.FirstOrDefault(x => x.Id == NewMeterReading.RoomId);
+        if (room is null || room.PropertyId != NewMeterReadingPropertyId)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
+
+        if (NewMeterReading.FeeTypeId <= 0 || MeterReadingFeeTypeOptions.All(x => x.Id != NewMeterReading.FeeTypeId))
+        {
+            throw new ValidationException("Vui lòng chọn loại phí theo chỉ số đang áp dụng cho phòng.");
+        }
+
+        NewMeterReading.BillingMonth = MeterReadingBillingMonth;
         _meterReadingService.Save(NewMeterReading);
         NewMeterReading = new MeterReading();
+        NewMeterReadingPropertyId = 0;
         OnPropertyChanged(nameof(NewMeterReading));
+        OnPropertyChanged(nameof(NewMeterReadingPropertyId));
+        OnPropertyChanged(nameof(NewMeterReadingRoomId));
+        OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
+        RefreshMeterReadingRoomOptions();
+        RefreshMeterReadingFeeTypeOptions();
         Load();
     }
 
@@ -1105,6 +1341,7 @@ public class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            Debug.WriteLine(ex);
             var message = ErrorMessageMapper.ToUserMessage(ex);
             StatusMessage = message;
             MessageBox.Show(message, "Quản lý nhà trọ", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -1241,7 +1478,7 @@ public class MainViewModel : ViewModelBase
         RoomFeePropertyFilterId = 0;
         RoomFeeRoomFilterId = 0;
         RoomFeeFeeTypeFilterId = 0;
-        RoomFeeStatusFilter = "Đang áp dụng";
+        RoomFeeStatusFilter = "Tất cả";
         RefreshAllFilters();
     }
 
@@ -1459,14 +1696,20 @@ public class MainViewModel : ViewModelBase
         if (RoomFeePropertyFilterId > 0) configs = configs.Where(x => x.Room?.PropertyId == RoomFeePropertyFilterId);
         if (RoomFeeRoomFilterId > 0) configs = configs.Where(x => x.RoomId == RoomFeeRoomFilterId);
         if (RoomFeeFeeTypeFilterId > 0) configs = configs.Where(x => x.FeeTypeId == RoomFeeFeeTypeFilterId);
-        if (RoomFeeEnabledOnly) configs = configs.Where(x => x.Enabled);
-        if (RoomFeeStatusFilter == "Đang áp dụng") configs = configs.Where(x => x.Enabled);
-        if (RoomFeeStatusFilter == "Ngừng áp dụng") configs = configs.Where(x => !x.Enabled);
+        if (RoomFeeStatusFilter == "Đang áp dụng") configs = configs.Where(x => x.IsEffectivelyActive);
+        if (RoomFeeStatusFilter == "Ngừng áp dụng") configs = configs.Where(x => !x.IsEffectivelyActive);
         if (!string.IsNullOrWhiteSpace(RoomFeeSearch))
         {
             configs = configs.Where(x => Contains(x.PropertyName, RoomFeeSearch) || Contains(x.RoomName, RoomFeeSearch) || Contains(x.FeeTypeName, RoomFeeSearch));
         }
-        Replace(FilteredRoomFeeConfigs, configs);
+        var filteredConfigs = configs.ToList();
+        Debug.WriteLine($"RoomFee filter: propertyId={RoomFeePropertyFilterId}, roomId={RoomFeeRoomFilterId}, feeTypeId={RoomFeeFeeTypeFilterId}, status={RoomFeeStatusFilter}, count={filteredConfigs.Count}");
+        foreach (var config in filteredConfigs.Where(x => x.Room is null || x.FeeType is null))
+        {
+            Debug.WriteLine($"RoomFee orphan/missing navigation: id={config.Id}, roomId={config.RoomId}, roomName={config.RoomName}, feeTypeId={config.FeeTypeId}, feeName={config.FeeTypeName}, enabled={config.Enabled}");
+        }
+
+        Replace(FilteredRoomFeeConfigs, filteredConfigs);
     }
 
     private void RefreshMeterReadingFilters()
@@ -1491,6 +1734,209 @@ public class MainViewModel : ViewModelBase
         Replace(FilteredMeterReadings, readings);
     }
 
+    private void RefreshMeterReadingFeeTypeOptions()
+    {
+        // Diagnostics: if this list is empty, the selected room has no enabled RoomFeeConfig with CalculationType.Meter.
+        var feeTypeIds = RoomFeeConfigs
+            .Where(x => x.RoomId == NewMeterReading.RoomId && x.Enabled && x.CalculationType == CalculationType.Meter)
+            .Select(x => x.FeeTypeId)
+            .Distinct()
+            .ToHashSet();
+
+        var feeTypes = FeeTypes
+            .Where(x => x.IsActive && feeTypeIds.Contains(x.Id))
+            .OrderBy(x => x.DisplayName)
+            .ToList();
+
+        Replace(MeterReadingFeeTypeOptions, feeTypes);
+
+        MeterReadingHelpMessage = NewMeterReading.RoomId > 0 && feeTypes.Count == 0
+            ? "Phòng này chưa có loại phí theo chỉ số đang áp dụng."
+            : string.Empty;
+
+        if (NewMeterReading.FeeTypeId > 0 && feeTypes.All(x => x.Id != NewMeterReading.FeeTypeId))
+        {
+            NewMeterReading.FeeTypeId = 0;
+            OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
+        }
+
+        LoadMeterReadingFormForSelection();
+    }
+
+    private void RefreshMeterReadingRoomOptions()
+    {
+        var rooms = NewMeterReadingPropertyId <= 0
+            ? new List<Room>()
+            : Rooms
+                .Where(x => x.PropertyId == NewMeterReadingPropertyId)
+                .OrderBy(x => x.RoomName)
+                .ToList();
+
+        Replace(MeterReadingRoomOptions, rooms);
+
+        if (NewMeterReading.RoomId > 0 && rooms.All(x => x.Id != NewMeterReading.RoomId))
+        {
+            NewMeterReading.RoomId = 0;
+            NewMeterReading.FeeTypeId = 0;
+            NewMeterReading.Id = 0;
+            NewMeterReading.PreviousReading = 0;
+            NewMeterReading.CurrentReading = 0;
+            NewMeterReading.Note = null;
+            OnPropertyChanged(nameof(NewMeterReading));
+            OnPropertyChanged(nameof(NewMeterReadingRoomId));
+            OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
+        }
+
+        RefreshMeterReadingFeeTypeOptions();
+    }
+
+    private string MeterReadingBillingMonth => $"{MeterFilterYear:0000}-{MeterFilterMonth:00}";
+
+    private void LoadMeterReadingFormForSelection()
+    {
+        if (NewMeterReading.RoomId <= 0 || NewMeterReading.FeeTypeId <= 0)
+        {
+            NewMeterReading.Id = 0;
+            NewMeterReading.PreviousReading = 0;
+            NewMeterReading.CurrentReading = 0;
+            NewMeterReading.Note = null;
+            OnPropertyChanged(nameof(NewMeterReading));
+            return;
+        }
+
+        var existingReading = MeterReadings.FirstOrDefault(x =>
+            x.RoomId == NewMeterReading.RoomId &&
+            x.FeeTypeId == NewMeterReading.FeeTypeId &&
+            x.BillingMonth == MeterReadingBillingMonth);
+
+        if (existingReading is not null)
+        {
+            NewMeterReading.Id = existingReading.Id;
+            NewMeterReading.BillingMonth = existingReading.BillingMonth;
+            NewMeterReading.PreviousReading = existingReading.PreviousReading;
+            NewMeterReading.CurrentReading = existingReading.CurrentReading;
+            NewMeterReading.Note = existingReading.Note;
+            OnPropertyChanged(nameof(NewMeterReading));
+            return;
+        }
+
+        NewMeterReading.Id = 0;
+        NewMeterReading.BillingMonth = MeterReadingBillingMonth;
+        NewMeterReading.PreviousReading = _meterReadingService.GetPreviousReading(NewMeterReading.RoomId, NewMeterReading.FeeTypeId, MeterReadingBillingMonth);
+        NewMeterReading.CurrentReading = 0;
+        NewMeterReading.Note = null;
+        OnPropertyChanged(nameof(NewMeterReading));
+    }
+
+    private void RefreshRoomFeeFilterRoomOptions()
+    {
+        var rooms = Rooms
+            .Where(x => RoomFeePropertyFilterId <= 0 || x.PropertyId == RoomFeePropertyFilterId)
+            .OrderBy(x => x.PropertyName)
+            .ThenBy(x => x.RoomName)
+            .ToList();
+
+        Replace(RoomFeeFilterRoomOptions, rooms);
+
+        if (RoomFeeRoomFilterId > 0 && rooms.All(x => x.Id != RoomFeeRoomFilterId))
+        {
+            RoomFeeRoomFilterId = 0;
+        }
+    }
+
+    private void RefreshRoomFeeFormRoomOptions()
+    {
+        var rooms = NewRoomFeePropertyId <= 0
+            ? new List<Room>()
+            : Rooms
+                .Where(x => x.PropertyId == NewRoomFeePropertyId)
+                .OrderBy(x => x.PropertyName)
+                .ThenBy(x => x.RoomName)
+                .ToList();
+
+        Replace(RoomFeeFormRoomOptions, rooms);
+
+        if (NewRoomFeeConfig.RoomId > 0 && rooms.All(x => x.Id != NewRoomFeeConfig.RoomId))
+        {
+            NewRoomFeeConfig.RoomId = 0;
+            OnPropertyChanged(nameof(NewRoomFeeConfig));
+        }
+    }
+
+    private void RaiseRoomFeeFieldVisibility()
+    {
+        OnPropertyChanged(nameof(RoomFeeUnitPriceVisibility));
+        OnPropertyChanged(nameof(RoomFeeFixedAmountVisibility));
+        OnPropertyChanged(nameof(RoomFeeQuantityVisibility));
+        OnPropertyChanged(nameof(RoomFeeDefaultPriceVisibility));
+    }
+
+    private void RaiseRoomFeePricingState()
+    {
+        OnPropertyChanged(nameof(NewRoomFeeUseDefaultPrice));
+        OnPropertyChanged(nameof(RoomFeeCustomPriceInputEnabled));
+    }
+
+    private decimal? GetRoomFeeCustomPrice()
+    {
+        return NewRoomFeeConfig.CalculationType switch
+        {
+            CalculationType.Fixed => NewRoomFeeConfig.FixedAmount,
+            CalculationType.Meter or CalculationType.PerPerson or CalculationType.PerUnit => NewRoomFeeConfig.UnitPrice,
+            CalculationType.Manual => NewRoomFeeConfig.FixedAmount,
+            _ => null
+        };
+    }
+
+    private void ClearRoomFeeCustomPrice()
+    {
+        if (NewRoomFeeConfig.CalculationType == CalculationType.Fixed)
+        {
+            NewRoomFeeConfig.FixedAmount = null;
+        }
+        else if (NewRoomFeeConfig.CalculationType is CalculationType.Meter or CalculationType.PerPerson or CalculationType.PerUnit)
+        {
+            NewRoomFeeConfig.UnitPrice = null;
+        }
+    }
+
+    private void FillRoomFeeCustomPriceFromDefault()
+    {
+        var defaultPrice = FeeTypes.FirstOrDefault(x => x.Id == NewRoomFeeConfig.FeeTypeId)?.DefaultUnitPrice ?? 0;
+        if (NewRoomFeeConfig.CalculationType == CalculationType.Fixed && NewRoomFeeConfig.FixedAmount is null)
+        {
+            NewRoomFeeConfig.FixedAmount = defaultPrice;
+        }
+        else if (NewRoomFeeConfig.CalculationType is CalculationType.Meter or CalculationType.PerPerson or CalculationType.PerUnit &&
+                 NewRoomFeeConfig.UnitPrice is null)
+        {
+            NewRoomFeeConfig.UnitPrice = defaultPrice;
+        }
+    }
+
+    private void ClearIrrelevantRoomFeePriceFields()
+    {
+        switch (NewRoomFeeConfig.CalculationType)
+        {
+            case CalculationType.Fixed:
+                NewRoomFeeConfig.UnitPrice = null;
+                NewRoomFeeConfig.Quantity = null;
+                break;
+            case CalculationType.Meter:
+            case CalculationType.PerPerson:
+                NewRoomFeeConfig.FixedAmount = null;
+                NewRoomFeeConfig.Quantity = null;
+                break;
+            case CalculationType.PerUnit:
+                NewRoomFeeConfig.FixedAmount = null;
+                break;
+            case CalculationType.Manual:
+                NewRoomFeeConfig.UnitPrice = null;
+                NewRoomFeeConfig.Quantity = null;
+                break;
+        }
+    }
+
     private void NotifyFormModes()
     {
         OnPropertyChanged(nameof(NewProperty));
@@ -1498,11 +1944,19 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(NewTenant));
         OnPropertyChanged(nameof(NewFeeType));
         OnPropertyChanged(nameof(NewRoomFeeConfig));
+        OnPropertyChanged(nameof(NewRoomFeeFeeTypeId));
+        OnPropertyChanged(nameof(NewRoomFeeCalculationType));
         OnPropertyChanged(nameof(PropertyFormMode));
         OnPropertyChanged(nameof(RoomFormMode));
         OnPropertyChanged(nameof(TenantFormMode));
         OnPropertyChanged(nameof(FeeTypeFormMode));
         OnPropertyChanged(nameof(RoomFeeFormMode));
+        OnPropertyChanged(nameof(NewMeterReadingRoomId));
+        OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
+        OnPropertyChanged(nameof(NewMeterReadingPropertyId));
+        OnPropertyChanged(nameof(NewRoomFeePropertyId));
+        RaiseRoomFeeFieldVisibility();
+        RaiseRoomFeePricingState();
         RaiseCommandStates();
     }
 
@@ -1527,11 +1981,13 @@ public class MainViewModel : ViewModelBase
         EditFeeTypeCommand.RaiseCanExecuteChanged();
         DeactivateFeeTypeCommand.RaiseCanExecuteChanged();
         CancelFeeTypeEditCommand.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(SelectedFeeTypeToggleActionText));
         AddRoomFeeConfigCommand.RaiseCanExecuteChanged();
         SaveRoomFeeConfigCommand.RaiseCanExecuteChanged();
         EditRoomFeeConfigCommand.RaiseCanExecuteChanged();
         DisableRoomFeeConfigCommand.RaiseCanExecuteChanged();
         CancelRoomFeeConfigEditCommand.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(SelectedRoomFeeToggleActionText));
         IssueInvoiceCommand.RaiseCanExecuteChanged();
         RecordPaymentCommand.RaiseCanExecuteChanged();
         FillRemainingPaymentCommand.RaiseCanExecuteChanged();
