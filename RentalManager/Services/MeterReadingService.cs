@@ -15,13 +15,23 @@ public class MeterReadingService : CrudService<MeterReading>
     public override MeterReading Save(MeterReading entity)
     {
         using var db = DbContextFactory.Create();
-        var feeType = db.FeeTypes.Find(entity.FeeTypeId) ?? throw new ValidationException("Fee type was not found.");
+        if (entity.RoomId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
+
+        if (entity.FeeTypeId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn loại phí.");
+        }
+
+        var feeType = db.FeeTypes.Find(entity.FeeTypeId) ?? throw new ValidationException("Không tìm thấy loại phí đã chọn.");
         var config = db.RoomFeeConfigs.FirstOrDefault(x => x.RoomId == entity.RoomId && x.FeeTypeId == entity.FeeTypeId);
         var unitPrice = config?.UnitPrice ?? feeType.DefaultUnitPrice;
 
         if (entity.CurrentReading < entity.PreviousReading)
         {
-            throw new ValidationException("Current reading must be greater than or equal to previous reading.");
+            throw new ValidationException("Chỉ số mới phải lớn hơn hoặc bằng chỉ số cũ.");
         }
 
         entity.UnitPriceSnapshot = unitPrice;

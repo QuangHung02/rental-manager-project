@@ -1,0 +1,49 @@
+<Window x:Class="RentalManager.Views.RoomTransferDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Chuyển phòng"
+        Height="330"
+        Width="460"
+        MinHeight="330"
+        MinWidth="460"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="140"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Người thuê" Margin="0,0,8,10" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TenantText" FontWeight="SemiBold" Margin="0,0,0,10" VerticalAlignment="Center"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Phòng hiện tại" Margin="0,0,8,10" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="CurrentRoomText" FontWeight="SemiBold" Margin="0,0,0,10" VerticalAlignment="Center"/>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Ngày chuyển" Margin="0,0,8,10" VerticalAlignment="Center"/>
+        <DatePicker Grid.Row="2" Grid.Column="1" x:Name="MoveDatePicker" Margin="0,0,0,10"/>
+
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Nhà / khu trọ mới" Margin="0,0,8,10" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PropertyCombo" Margin="0,0,0,10" SelectionChanged="PropertyCombo_SelectionChanged"/>
+
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Phòng mới" Margin="0,0,8,10" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="4" Grid.Column="1" x:Name="RoomCombo" Margin="0,0,0,10"/>
+
+        <CheckBox Grid.Row="5" Grid.Column="1" x:Name="RepresentativeCheckBox" Content="Làm đại diện ở phòng mới" Margin="0,0,0,10"/>
+
+        <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Xác nhận chuyển phòng" Width="160" Margin="0,0,8,0" Click="Confirm_Click"/>
+            <Button Content="Hủy" Width="80" Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

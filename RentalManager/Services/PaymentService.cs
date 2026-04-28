@@ -21,14 +21,19 @@ public class PaymentService
     {
         if (amount <= 0)
         {
-            throw new ValidationException("Payment amount must be greater than 0.");
+            throw new ValidationException("Số tiền thanh toán phải lớn hơn 0.");
         }
 
         using var db = DbContextFactory.Create();
-        var invoice = db.Invoices.Include(x => x.Payments).FirstOrDefault(x => x.Id == invoiceId) ?? throw new ValidationException("Invoice was not found.");
+        var invoice = db.Invoices.Include(x => x.Payments).FirstOrDefault(x => x.Id == invoiceId) ?? throw new ValidationException("Không tìm thấy hóa đơn đã chọn.");
+        if (invoice.Status == InvoiceStatus.Paid || invoice.RemainingAmount <= 0)
+        {
+            throw new ValidationException("Hóa đơn này đã được thanh toán đủ.");
+        }
+
         if (!allowOverpay && amount > invoice.RemainingAmount)
         {
-            throw new ValidationException("Payment amount exceeds remaining amount.");
+            throw new ValidationException("Số tiền thanh toán vượt quá số tiền còn lại.");
         }
 
         var payment = new Payment { InvoiceId = invoiceId, Amount = amount, Method = method, PaymentDate = paymentDate, Note = note };

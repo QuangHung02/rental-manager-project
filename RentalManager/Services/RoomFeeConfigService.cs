@@ -17,7 +17,7 @@ public class RoomFeeConfigService : CrudService<RoomFeeConfig>
     public void Disable(int id)
     {
         using var db = DbContextFactory.Create();
-        var config = db.RoomFeeConfigs.Find(id) ?? throw new ValidationException("Room fee config was not found.");
+        var config = db.RoomFeeConfigs.Find(id) ?? throw new ValidationException("Không tìm thấy cấu hình phí đã chọn.");
         config.Enabled = false;
         db.SaveChanges();
     }
@@ -31,12 +31,12 @@ public class RoomFeeConfigService : CrudService<RoomFeeConfig>
     {
         if (entity.RoomId <= 0 || entity.FeeTypeId <= 0)
         {
-            throw new ValidationException("Choose a room and fee type.");
+            throw new ValidationException("Vui lòng chọn phòng và loại phí.");
         }
 
         if (entity.UnitPrice is < 0 || entity.FixedAmount is < 0 || entity.Quantity is < 0)
         {
-            throw new ValidationException("Amounts, unit prices, and quantities must be greater than or equal to 0.");
+            throw new ValidationException("Đơn giá, số tiền và số lượng phải lớn hơn hoặc bằng 0.");
         }
     }
 }

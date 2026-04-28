@@ -33,12 +33,12 @@ public class InvoiceService
         {
             if (!recreate)
             {
-                throw new ValidationException("Invoice already exists for this room and billing month.");
+                throw new ValidationException("Hóa đơn của phòng này trong tháng đã chọn đã tồn tại.");
             }
 
             if (existing.Status is InvoiceStatus.Issued or InvoiceStatus.Partial or InvoiceStatus.Paid)
             {
-                throw new ValidationException("Issued or paid invoices cannot be silently recreated.");
+                throw new ValidationException("Không thể tạo lại hóa đơn đã chốt hoặc đã thanh toán.");
             }
 
             db.InvoiceItems.RemoveRange(existing.Items);
@@ -46,6 +46,7 @@ public class InvoiceService
             db.SaveChanges();
         }
 
+        EnsureRoomHasRepresentativeIfOccupied(db, roomId);
         var invoice = _calculationService.BuildDraftInvoice(roomId, billingMonth);
         db.Invoices.Add(invoice);
         db.SaveChanges();
@@ -60,6 +61,7 @@ public class InvoiceService
         {
             if (!db.Invoices.Any(x => x.RoomId == roomId && x.BillingMonth == billingMonth))
             {
+                EnsureRoomHasRepresentativeIfOccupied(db, roomId);
                 var invoice = _calculationService.BuildDraftInvoice(roomId, billingMonth);
                 db.Invoices.Add(invoice);
             }
@@ -82,9 +84,12 @@ public class InvoiceService
         return rooms.Select(room =>
         {
             var hasInvoice = db.Invoices.Any(x => x.RoomId == room.Id && x.BillingMonth == billingMonth);
+            var missingRepresentative = room.Status == RoomStatus.Occupied && !db.RoomTenants.Any(x => x.RoomId == room.Id && x.Status == RoomTenantStatus.Active && x.IsRepresentative);
             var meterConfigs = db.RoomFeeConfigs.Where(x => x.RoomId == room.Id && x.Enabled && x.CalculationType == CalculationType.Meter).ToList();
             var missingReading = meterConfigs.Any(config => !db.MeterReadings.Any(r => r.RoomId == room.Id && r.FeeTypeId == config.FeeTypeId && r.BillingMonth == billingMonth));
             var status = hasInvoice ? "Đã có hóa đơn" : missingReading ? "Thiếu chỉ số" : "Đủ dữ liệu";
+
+            status = hasInvoice ? "Đã có hóa đơn" : missingRepresentative ? "Chưa có người đại diện" : missingReading ? "Thiếu chỉ số" : "Đủ dữ liệu";
 
             return new InvoiceReadinessRow
             {
@@ -103,6 +108,14 @@ public class InvoiceService
             .Select(x => x.RoomId)
             .ToList();
 
+        if (readyRoomIds.Count == 0)
+        {
+            readyRoomIds = GetReadiness(billingMonth)
+                .Where(x => x.StatusText == "Đủ dữ liệu")
+                .Select(x => x.RoomId)
+                .ToList();
+        }
+
         using var db = DbContextFactory.Create();
         foreach (var roomId in readyRoomIds)
         {
@@ -117,7 +130,7 @@ public class InvoiceService
     public void Issue(int invoiceId)
     {
         using var db = DbContextFactory.Create();
-        var invoice = db.Invoices.Find(invoiceId) ?? throw new ValidationException("Invoice was not found.");
+        var invoice = db.Invoices.Find(invoiceId) ?? throw new ValidationException("Không tìm thấy hóa đơn đã chọn.");
         if (invoice.Status == InvoiceStatus.Draft)
         {
             invoice.Status = InvoiceStatus.Issued;
@@ -130,7 +143,7 @@ public class InvoiceService
     public void Cancel(int invoiceId)
     {
         using var db = DbContextFactory.Create();
-        var invoice = db.Invoices.Find(invoiceId) ?? throw new ValidationException("Invoice was not found.");
+        var invoice = db.Invoices.Find(invoiceId) ?? throw new ValidationException("Không tìm thấy hóa đơn đã chọn.");
         invoice.Status = InvoiceStatus.Cancelled;
         invoice.UpdatedAt = DateTime.Now;
         db.SaveChanges();
@@ -157,5 +170,20 @@ public class InvoiceService
         lines.Add($"Paid: {invoice.PaidAmount:N0}");
         lines.Add($"Remaining: {invoice.RemainingAmount:N0}");
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static void EnsureRoomHasRepresentativeIfOccupied(RentalManagerDbContext db, int roomId)
+    {
+        var room = db.Rooms.Find(roomId) ?? throw new ValidationException("Không tìm thấy phòng.");
+        if (room.Status != RoomStatus.Occupied)
+        {
+            return;
+        }
+
+        var hasRepresentative = db.RoomTenants.Any(x => x.RoomId == roomId && x.Status == RoomTenantStatus.Active && x.IsRepresentative);
+        if (!hasRepresentative)
+        {
+            throw new ValidationException("Phòng này chưa có người đại diện. Vui lòng chọn người đại diện trước khi tạo hóa đơn.");
+        }
     }
 }

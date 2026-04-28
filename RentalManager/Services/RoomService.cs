@@ -24,6 +24,27 @@ public class RoomService : CrudService<Room>
         db.SaveChanges();
     }
 
+    public int Checkout(int id)
+    {
+        using var db = DbContextFactory.Create();
+        var room = db.Rooms.Find(id) ?? throw new ValidationException("Không tìm thấy phòng.");
+        var activeAssignments = db.RoomTenants
+            .Where(x => x.RoomId == id && x.Status == RoomTenantStatus.Active)
+            .ToList();
+
+        foreach (var assignment in activeAssignments)
+        {
+            assignment.Status = RoomTenantStatus.Ended;
+            assignment.EndDate = DateTime.Today;
+            assignment.IsRepresentative = false;
+        }
+
+        room.Status = RoomStatus.Vacant;
+        room.UpdatedAt = DateTime.Now;
+        db.SaveChanges();
+        return activeAssignments.Count;
+    }
+
     protected override IQueryable<Room> Include(IQueryable<Room> query)
     {
         return query.Include(x => x.Property).Include(x => x.RoomTenants).ThenInclude(x => x.Tenant);

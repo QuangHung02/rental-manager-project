@@ -17,5 +17,6 @@ public class RoomTenant
     public string RoomName => Room?.RoomName ?? string.Empty;
     public string PropertyName => Room?.Property?.Name ?? string.Empty;
     public string TenantName => Tenant?.FullName ?? string.Empty;
+    public string RepresentativeText => IsRepresentative ? "Đại diện" : "Người ở cùng";
     public string StatusText => DisplayText.For(Status);
 }
