@@ -29,22 +29,49 @@ public class RoomFeeConfig
             ? "Không hiệu lực - Loại phí đã ngừng"
             : "Ngừng áp dụng";
     public string ToggleActionText => Enabled ? "Ngừng" : "Bật lại";
-    public bool UsesDefaultPrice => CalculationType switch
+    public bool UsesDefaultPrice => FeeType is not null && CalculationType == FeeType.DefaultCalculationType && CalculationType switch
     {
         CalculationType.Fixed => FixedAmount is null,
         CalculationType.Meter or CalculationType.PerPerson or CalculationType.PerUnit => UnitPrice is null,
         _ => false
     };
-    public string AppliedPriceText => CalculationType switch
+    public string AppliedPriceText => MissingRequiredCustomPrice ? "Chưa nhập giá riêng" : CalculationType switch
     {
-        CalculationType.Fixed => $"{FormatMoney(FixedAmount ?? FeeType?.DefaultUnitPrice ?? 0)} / tháng {PriceSourceText}",
-        CalculationType.Meter => $"{FormatMoney(UnitPrice ?? FeeType?.DefaultUnitPrice ?? 0)} / {DisplayUnit(FeeType?.DefaultUnit)} {PriceSourceText}",
-        CalculationType.PerPerson => $"{FormatMoney(UnitPrice ?? FeeType?.DefaultUnitPrice ?? 0)} / người {PriceSourceText}",
-        CalculationType.PerUnit => $"{FormatMoney(UnitPrice ?? FeeType?.DefaultUnitPrice ?? 0)} × {FormatQuantity(Quantity ?? 1)} {PriceSourceText}",
+        CalculationType.Fixed => $"{FormatMoney(GetAppliedFixedAmount())} / tháng {PriceSourceText}",
+        CalculationType.Meter => $"{FormatMoney(GetAppliedUnitPrice())} / {DisplayUnit(FeeType?.DefaultUnit)} {PriceSourceText}",
+        CalculationType.PerPerson => $"{FormatMoney(GetAppliedUnitPrice())} / người {PriceSourceText}",
+        CalculationType.PerUnit => $"{FormatMoney(GetAppliedUnitPrice())} × {FormatQuantity(Quantity ?? 1)} {PriceSourceText}",
         CalculationType.Manual => $"{FormatMoney(FixedAmount ?? 0)} (riêng)",
         _ => string.Empty
     };
     private string PriceSourceText => UsesDefaultPrice ? "(mặc định)" : "(riêng)";
+    private bool MissingRequiredCustomPrice => !UsesDefaultPrice && CalculationType switch
+    {
+        CalculationType.Fixed => FixedAmount is null,
+        CalculationType.Meter or CalculationType.PerPerson or CalculationType.PerUnit => UnitPrice is null,
+        CalculationType.Manual => FixedAmount is null,
+        _ => false
+    };
+
+    private decimal GetAppliedFixedAmount()
+    {
+        if (FixedAmount is not null)
+        {
+            return FixedAmount.Value;
+        }
+
+        return UsesDefaultPrice ? FeeType?.DefaultUnitPrice ?? 0 : 0;
+    }
+
+    private decimal GetAppliedUnitPrice()
+    {
+        if (UnitPrice is not null)
+        {
+            return UnitPrice.Value;
+        }
+
+        return UsesDefaultPrice ? FeeType?.DefaultUnitPrice ?? 0 : 0;
+    }
 
     private static string FormatMoney(decimal value) => value.ToString("N0");
 

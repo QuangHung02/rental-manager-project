@@ -88,11 +88,12 @@ public class InvoiceService
         {
             var hasInvoice = db.Invoices.Any(x => x.RoomId == room.Id && x.BillingMonth == billingMonth);
             var missingRepresentative = room.Status == RoomStatus.Occupied && !db.RoomTenants.Any(x => x.RoomId == room.Id && x.Status == RoomTenantStatus.Active && x.IsRepresentative);
-            var meterConfigs = db.RoomFeeConfigs.Where(x => x.RoomId == room.Id && x.Enabled && x.CalculationType == CalculationType.Meter).ToList();
+            var meterConfigs = db.RoomFeeConfigs
+                .Include(x => x.FeeType)
+                .Where(x => x.RoomId == room.Id && x.Enabled && x.FeeType!.IsActive && x.CalculationType == CalculationType.Meter)
+                .ToList();
             var missingReading = meterConfigs.Any(config => !db.MeterReadings.Any(r => r.RoomId == room.Id && r.FeeTypeId == config.FeeTypeId && r.BillingMonth == billingMonth));
-            var status = hasInvoice ? "Đã có hóa đơn" : missingReading ? "Thiếu chỉ số" : "Đủ dữ liệu";
-
-            status = hasInvoice ? "Đã có hóa đơn" : missingRepresentative ? "Chưa có người đại diện" : missingReading ? "Thiếu chỉ số" : "Đủ dữ liệu";
+            var status = hasInvoice ? "Đã có hóa đơn" : missingRepresentative ? "Chưa có người đại diện" : missingReading ? "Thiếu chỉ số" : "Đủ dữ liệu";
 
             return new InvoiceReadinessRow
             {
@@ -120,14 +121,23 @@ public class InvoiceService
         }
 
         using var db = DbContextFactory.Create();
+        var createdCount = 0;
         foreach (var roomId in readyRoomIds)
         {
+            if (db.Invoices.Any(x => x.RoomId == roomId && x.BillingMonth == billingMonth))
+            {
+                continue;
+            }
+
+            EnsureRoomHasRepresentativeIfOccupied(db, roomId);
+            EnsureMeterReadingsPresent(db, roomId, billingMonth);
             var invoice = _calculationService.BuildDraftInvoice(roomId, billingMonth);
             db.Invoices.Add(invoice);
+            createdCount++;
         }
 
         db.SaveChanges();
-        return readyRoomIds.Count;
+        return createdCount;
     }
 
     public void Issue(int invoiceId)
@@ -193,7 +203,8 @@ public class InvoiceService
     private static void EnsureMeterReadingsPresent(RentalManagerDbContext db, int roomId, string billingMonth)
     {
         var missingReadingExists = db.RoomFeeConfigs
-            .Where(x => x.RoomId == roomId && x.Enabled && x.CalculationType == CalculationType.Meter)
+            .Include(x => x.FeeType)
+            .Where(x => x.RoomId == roomId && x.Enabled && x.FeeType!.IsActive && x.CalculationType == CalculationType.Meter)
             .Any(config => !db.MeterReadings.Any(reading =>
                 reading.RoomId == roomId &&
                 reading.FeeTypeId == config.FeeTypeId &&

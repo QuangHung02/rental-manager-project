@@ -57,7 +57,10 @@ public class MainViewModel : ViewModelBase
     private int _invoiceFilterYear = DateTime.Today.Year;
     private int _invoiceFilterPropertyId;
     private int _invoiceFilterRoomId;
+    private int _invoiceRoomId;
+    private int _invoiceNewPropertyId;
     private string _invoiceFilterStatus = "Tất cả";
+    private decimal _newPaymentAmount;
     private int _paymentFilterMonth = DateTime.Today.Month;
     private int _paymentFilterYear = DateTime.Today.Year;
     private int _paymentFilterPropertyId;
@@ -168,6 +171,8 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<MeterReading> FilteredMeterReadings { get; } = new();
     public ObservableCollection<Invoice> Invoices { get; } = new();
     public ObservableCollection<Invoice> FilteredInvoices { get; } = new();
+    public ObservableCollection<Room> InvoiceFilterRoomOptions { get; } = new();
+    public ObservableCollection<Room> InvoiceFormRoomOptions { get; } = new();
     public ObservableCollection<Invoice> DashboardInvoices { get; } = new();
     public ObservableCollection<Invoice> DashboardUnpaidInvoices { get; } = new();
     public ObservableCollection<MissingReadingRow> DashboardMissingReadings { get; } = new();
@@ -185,8 +190,16 @@ public class MainViewModel : ViewModelBase
     public FeeType NewFeeType { get; set; } = new();
     public RoomFeeConfig NewRoomFeeConfig { get; set; } = new();
     public MeterReading NewMeterReading { get; set; } = new();
-    public int InvoiceRoomId { get; set; }
-    public decimal NewPaymentAmount { get; set; }
+    public int InvoiceRoomId
+    {
+        get => _invoiceRoomId;
+        set => SetProperty(ref _invoiceRoomId, value);
+    }
+    public decimal NewPaymentAmount
+    {
+        get => _newPaymentAmount;
+        set => SetProperty(ref _newPaymentAmount, value);
+    }
     public PaymentMethod NewPaymentMethod { get; set; } = PaymentMethod.Cash;
     public string? NewPaymentNote { get; set; }
 
@@ -287,13 +300,17 @@ public class MainViewModel : ViewModelBase
             {
                 Replace(SelectedInvoiceItems, value?.Items ?? Enumerable.Empty<InvoiceItem>());
                 Replace(SelectedInvoicePayments, value?.Payments ?? Enumerable.Empty<Payment>());
-                if (value is not null && value.RemainingAmount > 0 && NewPaymentAmount == 0)
+                if (value is null || value.RemainingAmount <= 0)
+                {
+                    NewPaymentAmount = 0;
+                }
+                else
                 {
                     NewPaymentAmount = value.RemainingAmount;
                     NewPaymentMethod = PaymentMethod.Cash;
-                    OnPropertyChanged(nameof(NewPaymentAmount));
                     OnPropertyChanged(nameof(NewPaymentMethod));
                 }
+
                 OnPropertyChanged(nameof(SelectedInvoiceSummary));
                 RaiseCommandStates();
             }
@@ -502,12 +519,17 @@ public class MainViewModel : ViewModelBase
             }
 
             NewRoomFeeConfig.FeeTypeId = value;
-            OnPropertyChanged(nameof(NewRoomFeeFeeTypeId));
-            if (!NewRoomFeeUseDefaultPrice)
+            var feeType = FeeTypes.FirstOrDefault(x => x.Id == value);
+            if (feeType is not null)
             {
-                FillRoomFeeCustomPriceFromDefault();
+                NewRoomFeeConfig.CalculationType = feeType.DefaultCalculationType;
+                ClearIrrelevantRoomFeePriceFields();
+                ClearRoomFeeCustomPrice();
+                OnPropertyChanged(nameof(NewRoomFeeCalculationType));
+                RaiseRoomFeeFieldVisibility();
             }
 
+            OnPropertyChanged(nameof(NewRoomFeeFeeTypeId));
             OnPropertyChanged(nameof(NewRoomFeeConfig));
             OnPropertyChanged(nameof(RoomFeeFormMode));
             RaiseRoomFeePricingState();
@@ -557,8 +579,30 @@ public class MainViewModel : ViewModelBase
 
     public int InvoiceFilterMonth { get => _invoiceFilterMonth; set { if (SetProperty(ref _invoiceFilterMonth, value)) RefreshInvoiceFilters(); } }
     public int InvoiceFilterYear { get => _invoiceFilterYear; set { if (SetProperty(ref _invoiceFilterYear, value)) RefreshInvoiceFilters(); } }
-    public int InvoiceFilterPropertyId { get => _invoiceFilterPropertyId; set { if (SetProperty(ref _invoiceFilterPropertyId, value)) RefreshInvoiceFilters(); } }
+    public int InvoiceFilterPropertyId
+    {
+        get => _invoiceFilterPropertyId;
+        set
+        {
+            if (SetProperty(ref _invoiceFilterPropertyId, value))
+            {
+                RefreshInvoiceFilterRoomOptions();
+                RefreshInvoiceFilters();
+            }
+        }
+    }
     public int InvoiceFilterRoomId { get => _invoiceFilterRoomId; set { if (SetProperty(ref _invoiceFilterRoomId, value)) RefreshInvoiceFilters(); } }
+    public int InvoiceNewPropertyId
+    {
+        get => _invoiceNewPropertyId;
+        set
+        {
+            if (SetProperty(ref _invoiceNewPropertyId, value))
+            {
+                RefreshInvoiceFormRoomOptions();
+            }
+        }
+    }
     public string InvoiceFilterStatus { get => _invoiceFilterStatus; set { if (SetProperty(ref _invoiceFilterStatus, value)) RefreshInvoiceFilters(); } }
 
     public int PaymentFilterMonth { get => _paymentFilterMonth; set { if (SetProperty(ref _paymentFilterMonth, value)) RefreshPaymentFilters(); } }
@@ -637,7 +681,7 @@ public class MainViewModel : ViewModelBase
             var wasUsingDefault = NewRoomFeeUseDefaultPrice;
             NewRoomFeeConfig.CalculationType = value;
             ClearIrrelevantRoomFeePriceFields();
-            if (wasUsingDefault)
+            if (wasUsingDefault || !RoomFeeCalculationMatchesFeeTypeDefault())
             {
                 ClearRoomFeeCustomPrice();
             }
@@ -676,7 +720,9 @@ public class MainViewModel : ViewModelBase
 
     public bool NewRoomFeeUseDefaultPrice
     {
-        get => NewRoomFeeConfig.CalculationType != CalculationType.Manual && GetRoomFeeCustomPrice() is null;
+        get => NewRoomFeeConfig.CalculationType != CalculationType.Manual &&
+               RoomFeeCalculationMatchesFeeTypeDefault() &&
+               GetRoomFeeCustomPrice() is null;
         set
         {
             if (NewRoomFeeConfig.CalculationType == CalculationType.Manual)
@@ -686,6 +732,14 @@ public class MainViewModel : ViewModelBase
 
             if (value)
             {
+                if (!RoomFeeCalculationMatchesFeeTypeDefault())
+                {
+                    ClearRoomFeeCustomPrice();
+                    OnPropertyChanged(nameof(NewRoomFeeConfig));
+                    RaiseRoomFeePricingState();
+                    return;
+                }
+
                 ClearRoomFeeCustomPrice();
             }
             else
@@ -699,6 +753,8 @@ public class MainViewModel : ViewModelBase
     }
 
     public bool RoomFeeCustomPriceInputEnabled => NewRoomFeeConfig.CalculationType == CalculationType.Manual || !NewRoomFeeUseDefaultPrice;
+
+    public bool RoomFeeDefaultPriceInputEnabled => RoomFeeCalculationMatchesFeeTypeDefault();
 
     public int NewRoomFeePropertyId
     {
@@ -846,6 +902,8 @@ public class MainViewModel : ViewModelBase
         RefreshRoomFeeFilterRoomOptions();
         RefreshRoomFeeFormRoomOptions();
         RefreshMeterReadingRoomOptions();
+        RefreshInvoiceFilterRoomOptions();
+        RefreshInvoiceFormRoomOptions();
         RefreshAssignmentRoomOptions();
         Replace(Tenants, _tenantService.GetAll());
         RefreshAssignmentTenantOptions();
@@ -1207,7 +1265,14 @@ public class MainViewModel : ViewModelBase
 
     private void GenerateInvoice()
     {
+        if (InvoiceNewPropertyId <= 0) throw new ValidationException("Vui lòng chọn nhà / khu trọ.");
         if (InvoiceRoomId <= 0) throw new ValidationException("Chọn phòng để tạo hóa đơn.");
+        var room = Rooms.FirstOrDefault(x => x.Id == InvoiceRoomId);
+        if (room is null || room.PropertyId != InvoiceNewPropertyId)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
+
         _invoiceService.Generate(InvoiceRoomId, BillingMonth);
         Load();
     }
@@ -1240,12 +1305,18 @@ public class MainViewModel : ViewModelBase
             throw new ValidationException("Hóa đơn này đã được thanh toán đủ.");
         }
 
-        _paymentService.Record(SelectedInvoice!.Id, NewPaymentAmount, NewPaymentMethod, DateTime.Today, NewPaymentNote);
-        NewPaymentAmount = 0;
+        if (NewPaymentAmount <= 0)
+        {
+            throw new ValidationException("Vui lòng nhập số tiền thanh toán.");
+        }
+
+        var invoiceId = SelectedInvoice!.Id;
+        _paymentService.Record(invoiceId, NewPaymentAmount, NewPaymentMethod, DateTime.Today, NewPaymentNote);
         NewPaymentNote = null;
-        OnPropertyChanged(nameof(NewPaymentAmount));
         OnPropertyChanged(nameof(NewPaymentNote));
         Load();
+        SelectedInvoice = null;
+        SelectedInvoice = Invoices.FirstOrDefault(x => x.Id == invoiceId);
         StatusMessage = "Đã ghi nhận thanh toán.";
     }
 
@@ -1260,7 +1331,6 @@ public class MainViewModel : ViewModelBase
 
         NewPaymentAmount = SelectedInvoice.RemainingAmount;
         NewPaymentMethod = PaymentMethod.Cash;
-        OnPropertyChanged(nameof(NewPaymentAmount));
         OnPropertyChanged(nameof(NewPaymentMethod));
     }
 
@@ -1280,7 +1350,6 @@ public class MainViewModel : ViewModelBase
 
         NewPaymentAmount = invoice.RemainingAmount;
         NewPaymentMethod = PaymentMethod.Cash;
-        OnPropertyChanged(nameof(NewPaymentAmount));
         OnPropertyChanged(nameof(NewPaymentMethod));
     }
 
@@ -1462,6 +1531,8 @@ public class MainViewModel : ViewModelBase
         InvoiceFilterYear = SelectedBillingYear;
         InvoiceFilterPropertyId = 0;
         InvoiceFilterRoomId = 0;
+        InvoiceNewPropertyId = 0;
+        InvoiceRoomId = 0;
         InvoiceFilterStatus = "Tất cả";
         PaymentSearch = string.Empty;
         PaymentFilterMonth = SelectedBillingMonth;
@@ -1863,6 +1934,39 @@ public class MainViewModel : ViewModelBase
         }
     }
 
+    private void RefreshInvoiceFilterRoomOptions()
+    {
+        var rooms = Rooms
+            .Where(x => InvoiceFilterPropertyId <= 0 || x.PropertyId == InvoiceFilterPropertyId)
+            .OrderBy(x => x.PropertyName)
+            .ThenBy(x => x.RoomName)
+            .ToList();
+
+        Replace(InvoiceFilterRoomOptions, rooms);
+
+        if (InvoiceFilterRoomId > 0 && rooms.All(x => x.Id != InvoiceFilterRoomId))
+        {
+            InvoiceFilterRoomId = 0;
+        }
+    }
+
+    private void RefreshInvoiceFormRoomOptions()
+    {
+        var rooms = InvoiceNewPropertyId <= 0
+            ? new List<Room>()
+            : Rooms
+                .Where(x => x.PropertyId == InvoiceNewPropertyId)
+                .OrderBy(x => x.RoomName)
+                .ToList();
+
+        Replace(InvoiceFormRoomOptions, rooms);
+
+        if (InvoiceRoomId > 0 && rooms.All(x => x.Id != InvoiceRoomId))
+        {
+            InvoiceRoomId = 0;
+        }
+    }
+
     private void RaiseRoomFeeFieldVisibility()
     {
         OnPropertyChanged(nameof(RoomFeeUnitPriceVisibility));
@@ -1875,6 +1979,7 @@ public class MainViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(NewRoomFeeUseDefaultPrice));
         OnPropertyChanged(nameof(RoomFeeCustomPriceInputEnabled));
+        OnPropertyChanged(nameof(RoomFeeDefaultPriceInputEnabled));
     }
 
     private decimal? GetRoomFeeCustomPrice()
@@ -1886,6 +1991,12 @@ public class MainViewModel : ViewModelBase
             CalculationType.Manual => NewRoomFeeConfig.FixedAmount,
             _ => null
         };
+    }
+
+    private bool RoomFeeCalculationMatchesFeeTypeDefault()
+    {
+        var feeType = FeeTypes.FirstOrDefault(x => x.Id == NewRoomFeeConfig.FeeTypeId);
+        return feeType is not null && NewRoomFeeConfig.CalculationType == feeType.DefaultCalculationType;
     }
 
     private void ClearRoomFeeCustomPrice()

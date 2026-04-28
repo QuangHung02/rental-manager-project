@@ -234,28 +234,44 @@
                             <StackPanel><TextBlock Text="Tháng"/><ComboBox ItemsSource="{Binding MonthOptions}" SelectedItem="{Binding InvoiceFilterMonth}" Width="80"/></StackPanel>
                             <StackPanel><TextBlock Text="Năm"/><ComboBox ItemsSource="{Binding YearOptions}" SelectedItem="{Binding InvoiceFilterYear}" Width="90"/></StackPanel>
                             <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding PropertyFilterOptions}" SelectedValue="{Binding InvoiceFilterPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
-                            <StackPanel><TextBlock Text="Phòng lọc"/><ComboBox ItemsSource="{Binding Rooms}" SelectedValue="{Binding InvoiceFilterRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="120"/></StackPanel>
+                            <StackPanel><TextBlock Text="Phòng lọc"/><ComboBox ItemsSource="{Binding InvoiceFilterRoomOptions}" SelectedValue="{Binding InvoiceFilterRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="120"/></StackPanel>
                             <StackPanel><TextBlock Text="Trạng thái"/><ComboBox ItemsSource="{Binding InvoiceStatusFilterOptions}" SelectedItem="{Binding InvoiceFilterStatus}" Width="140"/></StackPanel>
                             <StackPanel><TextBlock Text="Người đại diện"/><TextBox Text="{Binding InvoiceSearch}" Width="140"/></StackPanel>
                             <Button Content="Xóa lọc" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
                     </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="Tạo hóa đơn">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding Rooms}" SelectedValue="{Binding InvoiceRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName"/></StackPanel>
-                            <Button Content="Tạo hóa đơn" Command="{Binding GenerateInvoiceCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Tạo tất cả" Command="{Binding GenerateAllInvoicesCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="Thanh toán cho hóa đơn đang chọn">
-                        <WrapPanel>
-                            <TextBlock Text="{Binding SelectedInvoiceSummary}" FontWeight="SemiBold" MinWidth="430"/>
-                            <StackPanel><TextBlock Text="Số tiền"/><TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewPaymentAmount, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
-                            <StackPanel><TextBlock Text="Phương thức"/><ComboBox ItemsSource="{Binding PaymentMethodOptions}" SelectedValue="{Binding NewPaymentMethod}" SelectedValuePath="Value" DisplayMemberPath="Text"/></StackPanel>
-                            <StackPanel><TextBlock Text="Ghi chú"/><TextBox Text="{Binding NewPaymentNote, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
-                            <Button Content="Điền số còn lại" Command="{Binding FillRemainingPaymentCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Ghi nhận thanh toán" Command="{Binding RecordPaymentCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
+                    <GroupBox DockPanel.Dock="Top" Header="Thao tác hóa đơn">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" BorderBrush="#d1d5db" BorderThickness="1" Padding="8" MinWidth="460">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="Tạo hóa đơn" FontWeight="SemiBold" Margin="4,0,4,6"/>
+                                    <WrapPanel>
+                                        <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding InvoiceNewPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
+                                        <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding InvoiceFormRoomOptions}" SelectedValue="{Binding InvoiceRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="130"/></StackPanel>
+                                        <Button Content="Tạo hóa đơn" Command="{Binding GenerateInvoiceCommand}" VerticalAlignment="Bottom"/>
+                                        <Button Content="Tạo tất cả" Command="{Binding GenerateAllInvoicesCommand}" VerticalAlignment="Bottom"/>
+                                    </WrapPanel>
+                                </DockPanel>
+                            </Border>
+                            <Border Grid.Column="2" BorderBrush="#d1d5db" BorderThickness="1" Padding="8">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="Ghi nhận thanh toán" FontWeight="SemiBold" Margin="4,0,4,6"/>
+                                    <WrapPanel>
+                                        <TextBlock Text="{Binding SelectedInvoiceSummary}" FontWeight="SemiBold" MinWidth="280" MaxWidth="360" TextWrapping="Wrap" Margin="4,18,8,0"/>
+                                        <StackPanel><TextBlock Text="Số tiền"/><TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewPaymentAmount, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="130"/></StackPanel>
+                                        <StackPanel><TextBlock Text="Phương thức"/><ComboBox ItemsSource="{Binding PaymentMethodOptions}" SelectedValue="{Binding NewPaymentMethod}" SelectedValuePath="Value" DisplayMemberPath="Text" Width="140"/></StackPanel>
+                                        <StackPanel><TextBlock Text="Ghi chú"/><TextBox Text="{Binding NewPaymentNote, UpdateSourceTrigger=PropertyChanged}" Width="150"/></StackPanel>
+                                        <Button Content="Điền số còn lại" Command="{Binding FillRemainingPaymentCommand}" VerticalAlignment="Bottom"/>
+                                        <Button Content="Ghi nhận thanh toán" Command="{Binding RecordPaymentCommand}" VerticalAlignment="Bottom"/>
+                                    </WrapPanel>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
                     </GroupBox>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -473,7 +489,7 @@
                             <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding RoomFeeFormRoomOptions}" SelectedValue="{Binding NewRoomFeeConfig.RoomId}" SelectedValuePath="Id" DisplayMemberPath="DisplayNameWithProperty" Width="190"/></StackPanel>
                             <StackPanel><TextBlock Text="Loại phí"/><ComboBox ItemsSource="{Binding FeeTypes}" SelectedValue="{Binding NewRoomFeeFeeTypeId}" SelectedValuePath="Id" DisplayMemberPath="DisplayName"/></StackPanel>
                             <StackPanel><TextBlock Text="Cách tính"/><ComboBox ItemsSource="{Binding CalculationTypeOptions}" SelectedValue="{Binding NewRoomFeeCalculationType}" SelectedValuePath="Value" DisplayMemberPath="Text"/></StackPanel>
-                            <CheckBox Content="Dùng giá mặc định" IsChecked="{Binding NewRoomFeeUseDefaultPrice}" Visibility="{Binding RoomFeeDefaultPriceVisibility}" VerticalAlignment="Bottom" Margin="8"/>
+                            <CheckBox Content="Dùng giá mặc định" IsChecked="{Binding NewRoomFeeUseDefaultPrice}" IsEnabled="{Binding RoomFeeDefaultPriceInputEnabled}" Visibility="{Binding RoomFeeDefaultPriceVisibility}" VerticalAlignment="Bottom" Margin="8"/>
                             <StackPanel Visibility="{Binding RoomFeeUnitPriceVisibility}"><TextBlock Text="Đơn giá"/><TextBox IsEnabled="{Binding RoomFeeCustomPriceInputEnabled}" helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoomFeeConfig.UnitPrice, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
                             <StackPanel Visibility="{Binding RoomFeeFixedAmountVisibility}"><TextBlock Text="Cố định"/><TextBox IsEnabled="{Binding RoomFeeCustomPriceInputEnabled}" helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoomFeeConfig.FixedAmount, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
                             <StackPanel Visibility="{Binding RoomFeeQuantityVisibility}"><TextBlock Text="Số lượng"/><TextBox Text="{Binding NewRoomFeeConfig.Quantity, UpdateSourceTrigger=PropertyChanged}" Width="90"/></StackPanel>

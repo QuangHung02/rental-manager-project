@@ -38,6 +38,11 @@ public class MeterReadingService : CrudService<MeterReading>
             throw new ValidationException("Vui lòng chọn loại phí theo chỉ số đang áp dụng cho phòng.");
         }
 
+        if (config.UnitPrice is null && config.CalculationType != feeType.DefaultCalculationType)
+        {
+            throw new ValidationException("Không thể dùng giá mặc định khi cách tính khác với loại phí gốc. Vui lòng nhập giá riêng.");
+        }
+
         var unitPrice = config.UnitPrice ?? feeType.DefaultUnitPrice;
 
         if (entity.CurrentReading < entity.PreviousReading)

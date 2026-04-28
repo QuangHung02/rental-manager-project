@@ -77,6 +77,8 @@ public class RoomFeeConfigService : CrudService<RoomFeeConfig>
             throw new ValidationException("Loại phí này đang ngừng dùng. Vui lòng bật lại trong tab Loại phí trước.");
         }
 
+        ValidateDefaultPriceContext(entity, feeType);
+
         var duplicateConfig = db.RoomFeeConfigs
             .AsNoTracking()
             .FirstOrDefault(x =>
@@ -99,6 +101,31 @@ public class RoomFeeConfigService : CrudService<RoomFeeConfig>
         if (entity.CalculationType == CalculationType.Meter && !feeType.IsActive)
         {
             throw new ValidationException("Loại phí này đang ngừng dùng. Vui lòng bật lại trong tab Loại phí trước.");
+        }
+    }
+
+    private static void ValidateDefaultPriceContext(RoomFeeConfig entity, FeeType feeType)
+    {
+        if (entity.CalculationType == CalculationType.Manual)
+        {
+            return;
+        }
+
+        var usesDefaultPrice = entity.CalculationType switch
+        {
+            CalculationType.Fixed => entity.FixedAmount is null,
+            CalculationType.Meter or CalculationType.PerPerson or CalculationType.PerUnit => entity.UnitPrice is null,
+            _ => false
+        };
+
+        if (!usesDefaultPrice)
+        {
+            return;
+        }
+
+        if (entity.CalculationType != feeType.DefaultCalculationType)
+        {
+            throw new ValidationException("Không thể dùng giá mặc định khi cách tính khác với loại phí gốc. Vui lòng nhập giá riêng.");
         }
     }
 
