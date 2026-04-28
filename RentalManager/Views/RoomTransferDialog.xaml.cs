@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using RentalManager.Models;
 using PropertyModel = RentalManager.Models.Property;

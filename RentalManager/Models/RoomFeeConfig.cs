@@ -1,4 +1,4 @@
-using RentalManager.Enums;
+﻿using RentalManager.Enums;
 using RentalManager.Helpers;
 
 namespace RentalManager.Models;

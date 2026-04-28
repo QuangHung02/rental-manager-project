@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RentalManager.Data;
 using RentalManager.Enums;
 using RentalManager.Helpers;

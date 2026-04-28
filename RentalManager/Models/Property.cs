@@ -1,4 +1,4 @@
-namespace RentalManager.Models;
+﻿namespace RentalManager.Models;
 
 public class Property
 {

@@ -29,10 +29,10 @@ public class MainViewModel : ViewModelBase
 
     private string _billingMonth = DateTime.Today.ToString("yyyy-MM");
     private int _dashboardYear = DateTime.Today.Year;
-    private string _dashboardRange = "TÃ¹y chá»n thÃ¡ng";
+    private string _dashboardRange = "Tùy chọn tháng";
     private int _dashboardPropertyFilterId;
     private string _activeDashboardPeriod = string.Empty;
-    private string _statusMessage = "Sáºµn sÃ ng";
+    private string _statusMessage = "Sẵn sàng";
     private DashboardSummary _dashboard = new();
     private Property? _selectedProperty;
     private Room? _selectedRoom;
@@ -42,32 +42,32 @@ public class MainViewModel : ViewModelBase
     private Invoice? _selectedInvoice;
     private string _roomSearch = string.Empty;
     private string _tenantSearch = string.Empty;
-    private string _tenantStatusFilter = "Táº¥t cáº£";
-    private string _assignmentHistoryFilter = "ÄÃ£ káº¿t thÃºc";
+    private string _tenantStatusFilter = "Tất cả";
+    private string _assignmentHistoryFilter = "Đã kết thúc";
     private string _invoiceSearch = string.Empty;
     private string _paymentSearch = string.Empty;
     private string _roomFeeSearch = string.Empty;
     private int _selectedBillingMonth = DateTime.Today.Month;
     private int _selectedBillingYear = DateTime.Today.Year;
     private int _roomFilterPropertyId;
-    private string _roomFilterStatus = "Táº¥t cáº£";
+    private string _roomFilterStatus = "Tất cả";
     private string _roomRepresentativeSearch = string.Empty;
     private int _invoiceFilterMonth = DateTime.Today.Month;
     private int _invoiceFilterYear = DateTime.Today.Year;
     private int _invoiceFilterPropertyId;
     private int _invoiceFilterRoomId;
-    private string _invoiceFilterStatus = "Táº¥t cáº£";
+    private string _invoiceFilterStatus = "Tất cả";
     private int _paymentFilterMonth = DateTime.Today.Month;
     private int _paymentFilterYear = DateTime.Today.Year;
     private int _paymentFilterPropertyId;
     private int _paymentFilterRoomId;
-    private string _paymentFilterMethod = "Táº¥t cáº£";
+    private string _paymentFilterMethod = "Tất cả";
     private int _meterFilterMonth = DateTime.Today.Month;
     private int _meterFilterYear = DateTime.Today.Year;
     private int _meterFilterPropertyId;
     private int _meterFilterRoomId;
     private int _meterFilterFeeTypeId;
-    private string _roomFeeStatusFilter = "Äang Ã¡p dá»¥ng";
+    private string _roomFeeStatusFilter = "Đang áp dụng";
     private int _roomFeePropertyFilterId;
     private int _roomFeeRoomFilterId;
     private int _roomFeeFeeTypeFilterId;
@@ -172,30 +172,30 @@ public class MainViewModel : ViewModelBase
     public PaymentMethod NewPaymentMethod { get; set; } = PaymentMethod.Cash;
     public string? NewPaymentNote { get; set; }
 
-    public IReadOnlyList<string> DashboardRangeOptions { get; } = new[] { "ThÃ¡ng hiá»‡n táº¡i", "3 thÃ¡ng gáº§n nháº¥t", "6 thÃ¡ng gáº§n nháº¥t", "NÄƒm hiá»‡n táº¡i", "TÃ¹y chá»n thÃ¡ng" };
+    public IReadOnlyList<string> DashboardRangeOptions { get; } = new[] { "Tháng hiện tại", "3 tháng gần nhất", "6 tháng gần nhất", "Năm hiện tại", "Tùy chọn tháng" };
     public IReadOnlyList<int> MonthOptions { get; } = Enumerable.Range(1, 12).ToList();
     public IReadOnlyList<int> YearOptions { get; } = Enumerable.Range(DateTime.Today.Year - 5, 11).ToList();
-    public IReadOnlyList<string> RoomStatusFilterOptions { get; } = new[] { "Táº¥t cáº£", "Äang cho thuÃª", "Äang trá»‘ng" };
-    public IReadOnlyList<string> TenantStatusFilterOptions { get; } = new[] { "Táº¥t cáº£", "Äang thuÃª", "ChÆ°a phÃ¢n phÃ²ng", "ÄÃ£ tá»«ng thuÃª" };
-    public IReadOnlyList<string> AssignmentHistoryFilterOptions { get; } = new[] { "ÄÃ£ káº¿t thÃºc", "Äang thuÃª", "Táº¥t cáº£" };
-    public IReadOnlyList<string> InvoiceStatusFilterOptions { get; } = new[] { "Táº¥t cáº£", "NhÃ¡p", "ÄÃ£ chá»‘t", "Thanh toÃ¡n má»™t pháº§n", "ÄÃ£ tráº£", "ÄÃ£ há»§y" };
-    public IReadOnlyList<string> PaymentMethodFilterOptions { get; } = new[] { "Táº¥t cáº£", "Tiá»n máº·t", "Chuyá»ƒn khoáº£n", "Momo", "KhÃ¡c" };
-    public IReadOnlyList<string> RoomFeeStatusFilterOptions { get; } = new[] { "Táº¥t cáº£", "Äang Ã¡p dá»¥ng", "Ngá»«ng Ã¡p dá»¥ng" };
-    public IReadOnlyList<EnumOption<RoomStatus>> RoomFormStatusOptions { get; } = new[] { new EnumOption<RoomStatus>(RoomStatus.Occupied, "Äang cho thuÃª"), new EnumOption<RoomStatus>(RoomStatus.Vacant, "Äang trá»‘ng") };
+    public IReadOnlyList<string> RoomStatusFilterOptions { get; } = new[] { "Tất cả", "Đang cho thuê", "Đang trống" };
+    public IReadOnlyList<string> TenantStatusFilterOptions { get; } = new[] { "Tất cả", "Đang thuê", "Chưa phân phòng", "Đã từng thuê" };
+    public IReadOnlyList<string> AssignmentHistoryFilterOptions { get; } = new[] { "Đã kết thúc", "Đang thuê", "Tất cả" };
+    public IReadOnlyList<string> InvoiceStatusFilterOptions { get; } = new[] { "Tất cả", "Nháp", "Đã chốt", "Thanh toán một phần", "Đã trả", "Đã hủy" };
+    public IReadOnlyList<string> PaymentMethodFilterOptions { get; } = new[] { "Tất cả", "Tiền mặt", "Chuyển khoản", "Momo", "Khác" };
+    public IReadOnlyList<string> RoomFeeStatusFilterOptions { get; } = new[] { "Tất cả", "Đang áp dụng", "Ngừng áp dụng" };
+    public IReadOnlyList<EnumOption<RoomStatus>> RoomFormStatusOptions { get; } = new[] { new EnumOption<RoomStatus>(RoomStatus.Occupied, "Đang cho thuê"), new EnumOption<RoomStatus>(RoomStatus.Vacant, "Đang trống") };
     public IReadOnlyList<EnumOption<CalculationType>> CalculationTypeOptions { get; } = new[]
     {
-        new EnumOption<CalculationType>(CalculationType.Fixed, "Cá»‘ Ä‘á»‹nh"),
-        new EnumOption<CalculationType>(CalculationType.Meter, "Theo chá»‰ sá»‘"),
-        new EnumOption<CalculationType>(CalculationType.PerPerson, "Theo ngÆ°á»i"),
-        new EnumOption<CalculationType>(CalculationType.PerUnit, "Theo sá»‘ lÆ°á»£ng"),
-        new EnumOption<CalculationType>(CalculationType.Manual, "Nháº­p tay")
+        new EnumOption<CalculationType>(CalculationType.Fixed, "Cố định"),
+        new EnumOption<CalculationType>(CalculationType.Meter, "Theo chỉ số"),
+        new EnumOption<CalculationType>(CalculationType.PerPerson, "Theo người"),
+        new EnumOption<CalculationType>(CalculationType.PerUnit, "Theo số lượng"),
+        new EnumOption<CalculationType>(CalculationType.Manual, "Nhập tay")
     };
     public IReadOnlyList<EnumOption<PaymentMethod>> PaymentMethodOptions { get; } = new[]
     {
-        new EnumOption<PaymentMethod>(PaymentMethod.Cash, "Tiá»n máº·t"),
-        new EnumOption<PaymentMethod>(PaymentMethod.BankTransfer, "Chuyá»ƒn khoáº£n"),
+        new EnumOption<PaymentMethod>(PaymentMethod.Cash, "Tiền mặt"),
+        new EnumOption<PaymentMethod>(PaymentMethod.BankTransfer, "Chuyển khoản"),
         new EnumOption<PaymentMethod>(PaymentMethod.Momo, "Momo"),
-        new EnumOption<PaymentMethod>(PaymentMethod.Other, "KhÃ¡c")
+        new EnumOption<PaymentMethod>(PaymentMethod.Other, "Khác")
     };
 
     public Property? SelectedProperty
@@ -267,6 +267,13 @@ public class MainViewModel : ViewModelBase
             {
                 Replace(SelectedInvoiceItems, value?.Items ?? Enumerable.Empty<InvoiceItem>());
                 Replace(SelectedInvoicePayments, value?.Payments ?? Enumerable.Empty<Payment>());
+                if (value is not null && value.RemainingAmount > 0 && NewPaymentAmount == 0)
+                {
+                    NewPaymentAmount = value.RemainingAmount;
+                    NewPaymentMethod = PaymentMethod.Cash;
+                    OnPropertyChanged(nameof(NewPaymentAmount));
+                    OnPropertyChanged(nameof(NewPaymentMethod));
+                }
                 OnPropertyChanged(nameof(SelectedInvoiceSummary));
                 RaiseCommandStates();
             }
@@ -448,29 +455,29 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    public int RoomFilterPropertyId { get => _roomFilterPropertyId; set => SetProperty(ref _roomFilterPropertyId, value); }
-    public string RoomFilterStatus { get => _roomFilterStatus; set => SetProperty(ref _roomFilterStatus, value); }
-    public string RoomRepresentativeSearch { get => _roomRepresentativeSearch; set => SetProperty(ref _roomRepresentativeSearch, value); }
+    public int RoomFilterPropertyId { get => _roomFilterPropertyId; set { if (SetProperty(ref _roomFilterPropertyId, value)) RefreshRoomFilters(); } }
+    public string RoomFilterStatus { get => _roomFilterStatus; set { if (SetProperty(ref _roomFilterStatus, value)) RefreshRoomFilters(); } }
+    public string RoomRepresentativeSearch { get => _roomRepresentativeSearch; set { if (SetProperty(ref _roomRepresentativeSearch, value)) RefreshRoomFilters(); } }
 
-    public int InvoiceFilterMonth { get => _invoiceFilterMonth; set => SetProperty(ref _invoiceFilterMonth, value); }
-    public int InvoiceFilterYear { get => _invoiceFilterYear; set => SetProperty(ref _invoiceFilterYear, value); }
-    public int InvoiceFilterPropertyId { get => _invoiceFilterPropertyId; set => SetProperty(ref _invoiceFilterPropertyId, value); }
-    public int InvoiceFilterRoomId { get => _invoiceFilterRoomId; set => SetProperty(ref _invoiceFilterRoomId, value); }
-    public string InvoiceFilterStatus { get => _invoiceFilterStatus; set => SetProperty(ref _invoiceFilterStatus, value); }
+    public int InvoiceFilterMonth { get => _invoiceFilterMonth; set { if (SetProperty(ref _invoiceFilterMonth, value)) RefreshInvoiceFilters(); } }
+    public int InvoiceFilterYear { get => _invoiceFilterYear; set { if (SetProperty(ref _invoiceFilterYear, value)) RefreshInvoiceFilters(); } }
+    public int InvoiceFilterPropertyId { get => _invoiceFilterPropertyId; set { if (SetProperty(ref _invoiceFilterPropertyId, value)) RefreshInvoiceFilters(); } }
+    public int InvoiceFilterRoomId { get => _invoiceFilterRoomId; set { if (SetProperty(ref _invoiceFilterRoomId, value)) RefreshInvoiceFilters(); } }
+    public string InvoiceFilterStatus { get => _invoiceFilterStatus; set { if (SetProperty(ref _invoiceFilterStatus, value)) RefreshInvoiceFilters(); } }
 
-    public int PaymentFilterMonth { get => _paymentFilterMonth; set => SetProperty(ref _paymentFilterMonth, value); }
-    public int PaymentFilterYear { get => _paymentFilterYear; set => SetProperty(ref _paymentFilterYear, value); }
-    public int PaymentFilterPropertyId { get => _paymentFilterPropertyId; set => SetProperty(ref _paymentFilterPropertyId, value); }
-    public int PaymentFilterRoomId { get => _paymentFilterRoomId; set => SetProperty(ref _paymentFilterRoomId, value); }
-    public string PaymentFilterMethod { get => _paymentFilterMethod; set => SetProperty(ref _paymentFilterMethod, value); }
+    public int PaymentFilterMonth { get => _paymentFilterMonth; set { if (SetProperty(ref _paymentFilterMonth, value)) RefreshPaymentFilters(); } }
+    public int PaymentFilterYear { get => _paymentFilterYear; set { if (SetProperty(ref _paymentFilterYear, value)) RefreshPaymentFilters(); } }
+    public int PaymentFilterPropertyId { get => _paymentFilterPropertyId; set { if (SetProperty(ref _paymentFilterPropertyId, value)) RefreshPaymentFilters(); } }
+    public int PaymentFilterRoomId { get => _paymentFilterRoomId; set { if (SetProperty(ref _paymentFilterRoomId, value)) RefreshPaymentFilters(); } }
+    public string PaymentFilterMethod { get => _paymentFilterMethod; set { if (SetProperty(ref _paymentFilterMethod, value)) RefreshPaymentFilters(); } }
 
-    public int MeterFilterMonth { get => _meterFilterMonth; set => SetProperty(ref _meterFilterMonth, value); }
-    public int MeterFilterYear { get => _meterFilterYear; set => SetProperty(ref _meterFilterYear, value); }
-    public int MeterFilterPropertyId { get => _meterFilterPropertyId; set => SetProperty(ref _meterFilterPropertyId, value); }
-    public int MeterFilterRoomId { get => _meterFilterRoomId; set => SetProperty(ref _meterFilterRoomId, value); }
-    public int MeterFilterFeeTypeId { get => _meterFilterFeeTypeId; set => SetProperty(ref _meterFilterFeeTypeId, value); }
+    public int MeterFilterMonth { get => _meterFilterMonth; set { if (SetProperty(ref _meterFilterMonth, value)) RefreshMeterReadingFilters(); } }
+    public int MeterFilterYear { get => _meterFilterYear; set { if (SetProperty(ref _meterFilterYear, value)) RefreshMeterReadingFilters(); } }
+    public int MeterFilterPropertyId { get => _meterFilterPropertyId; set { if (SetProperty(ref _meterFilterPropertyId, value)) RefreshMeterReadingFilters(); } }
+    public int MeterFilterRoomId { get => _meterFilterRoomId; set { if (SetProperty(ref _meterFilterRoomId, value)) RefreshMeterReadingFilters(); } }
+    public int MeterFilterFeeTypeId { get => _meterFilterFeeTypeId; set { if (SetProperty(ref _meterFilterFeeTypeId, value)) RefreshMeterReadingFilters(); } }
 
-    public string RoomFeeStatusFilter { get => _roomFeeStatusFilter; set => SetProperty(ref _roomFeeStatusFilter, value); }
+    public string RoomFeeStatusFilter { get => _roomFeeStatusFilter; set { if (SetProperty(ref _roomFeeStatusFilter, value)) RefreshRoomFeeFilters(); } }
 
     public int DashboardYear
     {
@@ -516,14 +523,14 @@ public class MainViewModel : ViewModelBase
     }
 
     public string DatabasePath => _backupService.DatabasePath;
-    public string PropertyFormMode => NewProperty.Id > 0 ? $"Äang sá»­a: {NewProperty.Name}" : "Äang thÃªm má»›i";
-    public string RoomFormMode => NewRoom.Id > 0 ? $"Äang sá»­a: {NewRoom.RoomName}" : "Äang thÃªm má»›i";
-    public string TenantFormMode => NewTenant.Id > 0 ? $"Äang sá»­a: {NewTenant.FullName}" : "Äang thÃªm má»›i";
-    public string FeeTypeFormMode => NewFeeType.Id > 0 ? $"Äang sá»­a: {NewFeeType.DisplayName}" : "Äang thÃªm má»›i";
-    public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? "Äang sá»­a cáº¥u hÃ¬nh phÃ­" : "Äang thÃªm má»›i";
+    public string PropertyFormMode => NewProperty.Id > 0 ? $"Đang sửa: {NewProperty.Name}" : "Đang thêm mới";
+    public string RoomFormMode => NewRoom.Id > 0 ? $"Đang sửa: {NewRoom.RoomName}" : "Đang thêm mới";
+    public string TenantFormMode => NewTenant.Id > 0 ? $"Đang sửa: {NewTenant.FullName}" : "Đang thêm mới";
+    public string FeeTypeFormMode => NewFeeType.Id > 0 ? $"Đang sửa: {NewFeeType.DisplayName}" : "Đang thêm mới";
+    public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? "Đang sửa cấu hình phí" : "Đang thêm mới";
     public string SelectedInvoiceSummary => SelectedInvoice is null
-        ? "ChÆ°a chá»n hÃ³a Ä‘Æ¡n"
-        : $"{SelectedInvoice.RoomName} - {SelectedInvoice.RepresentativeTenantName} | Tá»•ng: {SelectedInvoice.TotalAmount:N0} | ÄÃ£ thu: {SelectedInvoice.PaidAmount:N0} | CÃ²n láº¡i: {SelectedInvoice.RemainingAmount:N0}";
+        ? "Chưa chọn hóa đơn"
+        : $"{SelectedInvoice.RoomName} - {SelectedInvoice.RepresentativeTenantName} | Tổng: {SelectedInvoice.TotalAmount:N0} | Đã thu: {SelectedInvoice.PaidAmount:N0} | Còn lại: {SelectedInvoice.RemainingAmount:N0}";
 
     public RelayCommand AddPropertyCommand { get; }
     public RelayCommand SavePropertyCommand { get; }
@@ -581,7 +588,7 @@ public class MainViewModel : ViewModelBase
     public void Load()
     {
         Replace(Properties, _propertyService.GetAll());
-        Replace(PropertyFilterOptions, new[] { new PropertyFilterOption { Id = 0, Name = "Táº¥t cáº£ nhÃ  / khu trá»" } }.Concat(Properties.Select(x => new PropertyFilterOption { Id = x.Id, Name = x.Name })));
+        Replace(PropertyFilterOptions, new[] { new PropertyFilterOption { Id = 0, Name = "Tất cả nhà / khu trọ" } }.Concat(Properties.Select(x => new PropertyFilterOption { Id = x.Id, Name = x.Name })));
         Replace(Rooms, _roomService.GetAll());
         Replace(Tenants, _tenantService.GetAll());
         Replace(RoomTenants, _roomTenantService.GetAll());
@@ -599,7 +606,7 @@ public class MainViewModel : ViewModelBase
     private void LoadDashboard()
     {
         var (startMonth, endMonth) = GetDashboardRange();
-        ActiveDashboardPeriod = startMonth == endMonth ? $"Äang xem: {startMonth}" : $"Äang xem: {startMonth} Ä‘áº¿n {endMonth}";
+        ActiveDashboardPeriod = startMonth == endMonth ? $"Đang xem: {startMonth}" : $"Đang xem: {startMonth} đến {endMonth}";
         int? propertyId = DashboardPropertyFilterId == 0 ? null : DashboardPropertyFilterId;
         Dashboard = _dashboardService.GetSummary(startMonth, endMonth, propertyId);
         Replace(DashboardInvoices, _dashboardService.GetInvoices(startMonth, endMonth, propertyId));
@@ -628,14 +635,14 @@ public class MainViewModel : ViewModelBase
 
     private void EditProperty()
     {
-        if (SelectedProperty is null) throw new ValidationException("Chá»n nhÃ /khu trá» trÆ°á»›c.");
+        if (SelectedProperty is null) throw new ValidationException("Chọn nhà/khu trọ trước.");
         NewProperty = new Property { Id = SelectedProperty.Id, Name = SelectedProperty.Name, Address = SelectedProperty.Address, Note = SelectedProperty.Note, IsActive = SelectedProperty.IsActive, CreatedAt = SelectedProperty.CreatedAt, UpdatedAt = SelectedProperty.UpdatedAt };
         NotifyFormModes();
     }
 
     private void DeactivateProperty()
     {
-        if (SelectedProperty is null) throw new ValidationException("Chá»n nhÃ /khu trá» trÆ°á»›c.");
+        if (SelectedProperty is null) throw new ValidationException("Chọn nhà/khu trọ trước.");
         _propertyService.Deactivate(SelectedProperty.Id);
         Load();
     }
@@ -660,7 +667,7 @@ public class MainViewModel : ViewModelBase
 
     private void EditRoom()
     {
-        if (SelectedRoom is null) throw new ValidationException("Chá»n phÃ²ng trÆ°á»›c.");
+        if (SelectedRoom is null) throw new ValidationException("Chọn phòng trước.");
         NewRoom = new Room { Id = SelectedRoom.Id, PropertyId = SelectedRoom.PropertyId, RoomName = SelectedRoom.RoomName, Floor = SelectedRoom.Floor, BaseRent = SelectedRoom.BaseRent, Status = SelectedRoom.Status is RoomStatus.Occupied ? RoomStatus.Occupied : RoomStatus.Vacant, Note = SelectedRoom.Note, CreatedAt = SelectedRoom.CreatedAt, UpdatedAt = SelectedRoom.UpdatedAt };
         NotifyFormModes();
     }
@@ -705,7 +712,7 @@ public class MainViewModel : ViewModelBase
 
     private void EditTenant()
     {
-        if (SelectedTenant is null) throw new ValidationException("Chá»n ngÆ°á»i thuÃª trÆ°á»›c.");
+        if (SelectedTenant is null) throw new ValidationException("Chọn người thuê trước.");
         NewTenant = new Tenant { Id = SelectedTenant.Id, FullName = SelectedTenant.FullName, Phone = SelectedTenant.Phone, Email = SelectedTenant.Email, IdentityNumber = SelectedTenant.IdentityNumber, Note = SelectedTenant.Note, CreatedAt = SelectedTenant.CreatedAt, UpdatedAt = SelectedTenant.UpdatedAt };
         NotifyFormModes();
     }
@@ -720,18 +727,18 @@ public class MainViewModel : ViewModelBase
 
     private void EndAssignment(RoomTenant? assignment)
     {
-        if (assignment is null) throw new ValidationException("Chá»n lÆ°á»£t thuÃª trÆ°á»›c.");
+        if (assignment is null) throw new ValidationException("Chọn lượt thuê trước.");
         var roomId = assignment.RoomId;
         _roomTenantService.EndAssignment(assignment.Id, AssignmentEndDate);
         Load();
         StatusMessage = RoomNeedsRepresentative(roomId)
-            ? "ÄÃ£ káº¿t thÃºc thuÃª. PhÃ²ng nÃ y chÆ°a cÃ³ ngÆ°á»i Ä‘áº¡i diá»‡n."
-            : "ÄÃ£ káº¿t thÃºc thuÃª.";
+            ? "Đã kết thúc thuê. Phòng này chưa có người đại diện."
+            : "Đã kết thúc thuê.";
     }
 
     private void ChangeRoom(RoomTenant? assignment)
     {
-        if (assignment is null) throw new ValidationException("Chá»n lÆ°á»£t thuÃª trÆ°á»›c.");
+        if (assignment is null) throw new ValidationException("Chọn lượt thuê trước.");
         var dialog = new RoomTransferDialog(assignment, Properties, Rooms)
         {
             Owner = Application.Current.MainWindow
@@ -744,14 +751,14 @@ public class MainViewModel : ViewModelBase
 
         _roomTenantService.ChangeRoom(assignment.Id, dialog.TargetRoomId, dialog.MoveDate, dialog.IsRepresentative);
         Load();
-        StatusMessage = "ÄÃ£ chuyá»ƒn phÃ²ng thÃ nh cÃ´ng.";
+        StatusMessage = "Đã chuyển phòng thành công.";
     }
 
     private void SetRepresentative(RoomTenant? assignment)
     {
-        if (assignment is null) throw new ValidationException("Chá»n lÆ°á»£t thuÃª trÆ°á»›c.");
+        if (assignment is null) throw new ValidationException("Chọn lượt thuê trước.");
         _roomTenantService.SetRepresentative(assignment.Id);
-        StatusMessage = "ÄÃ£ Ä‘áº·t ngÆ°á»i Ä‘áº¡i diá»‡n.";
+        StatusMessage = "Đã đặt người đại diện.";
         Load();
     }
 
@@ -775,14 +782,14 @@ public class MainViewModel : ViewModelBase
 
     private void EditFeeType()
     {
-        if (SelectedFeeType is null) throw new ValidationException("Chá»n loáº¡i phÃ­ trÆ°á»›c.");
+        if (SelectedFeeType is null) throw new ValidationException("Chọn loại phí trước.");
         NewFeeType = new FeeType { Id = SelectedFeeType.Id, Name = SelectedFeeType.Name, DefaultCalculationType = SelectedFeeType.DefaultCalculationType, DefaultUnit = SelectedFeeType.DefaultUnit, DefaultUnitPrice = SelectedFeeType.DefaultUnitPrice, IsSystem = SelectedFeeType.IsSystem, IsActive = SelectedFeeType.IsActive };
         NotifyFormModes();
     }
 
     private void DeactivateFeeType()
     {
-        if (SelectedFeeType is null) throw new ValidationException("Chá»n loáº¡i phÃ­ trÆ°á»›c.");
+        if (SelectedFeeType is null) throw new ValidationException("Chọn loại phí trước.");
         _feeTypeService.Deactivate(SelectedFeeType.Id);
         Load();
     }
@@ -807,14 +814,14 @@ public class MainViewModel : ViewModelBase
 
     private void EditRoomFeeConfig()
     {
-        if (SelectedRoomFeeConfig is null) throw new ValidationException("Chá»n cáº¥u hÃ¬nh phÃ­ trÆ°á»›c.");
+        if (SelectedRoomFeeConfig is null) throw new ValidationException("Chọn cấu hình phí trước.");
         NewRoomFeeConfig = new RoomFeeConfig { Id = SelectedRoomFeeConfig.Id, RoomId = SelectedRoomFeeConfig.RoomId, FeeTypeId = SelectedRoomFeeConfig.FeeTypeId, CalculationType = SelectedRoomFeeConfig.CalculationType, UnitPrice = SelectedRoomFeeConfig.UnitPrice, FixedAmount = SelectedRoomFeeConfig.FixedAmount, Quantity = SelectedRoomFeeConfig.Quantity, Enabled = SelectedRoomFeeConfig.Enabled, Note = SelectedRoomFeeConfig.Note };
         NotifyFormModes();
     }
 
     private void DisableRoomFeeConfig()
     {
-        if (SelectedRoomFeeConfig is null) throw new ValidationException("Chá»n cáº¥u hÃ¬nh phÃ­ trÆ°á»›c.");
+        if (SelectedRoomFeeConfig is null) throw new ValidationException("Chọn cấu hình phí trước.");
         _roomFeeConfigService.Disable(SelectedRoomFeeConfig.Id);
         Load();
     }
@@ -835,7 +842,7 @@ public class MainViewModel : ViewModelBase
 
     private void GenerateInvoice()
     {
-        if (InvoiceRoomId <= 0) throw new ValidationException("Chá»n phÃ²ng Ä‘á»ƒ táº¡o hÃ³a Ä‘Æ¡n.");
+        if (InvoiceRoomId <= 0) throw new ValidationException("Chọn phòng để tạo hóa đơn.");
         _invoiceService.Generate(InvoiceRoomId, BillingMonth);
         Load();
     }
@@ -849,7 +856,7 @@ public class MainViewModel : ViewModelBase
     private void GenerateReadyInvoices()
     {
         var count = _invoiceService.GenerateReady(BillingMonth);
-        StatusMessage = $"ÄÃ£ táº¡o {count} hÃ³a Ä‘Æ¡n Ä‘á»§ dá»¯ liá»‡u.";
+        StatusMessage = $"Đã tạo {count} hóa đơn đủ dữ liệu.";
         Load();
     }
 
@@ -865,7 +872,7 @@ public class MainViewModel : ViewModelBase
         EnsureInvoiceSelected();
         if (SelectedInvoice!.RemainingAmount <= 0)
         {
-            throw new ValidationException("HÃ³a Ä‘Æ¡n nÃ y Ä‘Ã£ Ä‘Æ°á»£c thanh toÃ¡n Ä‘á»§.");
+            throw new ValidationException("Hóa đơn này đã được thanh toán đủ.");
         }
 
         _paymentService.Record(SelectedInvoice!.Id, NewPaymentAmount, NewPaymentMethod, DateTime.Today, NewPaymentNote);
@@ -874,7 +881,7 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(NewPaymentAmount));
         OnPropertyChanged(nameof(NewPaymentNote));
         Load();
-        StatusMessage = "ÄÃ£ ghi nháº­n thanh toÃ¡n.";
+        StatusMessage = "Đã ghi nhận thanh toán.";
     }
 
     private void FillRemainingPayment()
@@ -882,7 +889,7 @@ public class MainViewModel : ViewModelBase
         if (SelectedInvoice is null) return;
         if (SelectedInvoice.RemainingAmount <= 0)
         {
-            StatusMessage = "HÃ³a Ä‘Æ¡n nÃ y Ä‘Ã£ Ä‘Æ°á»£c thanh toÃ¡n Ä‘á»§.";
+            StatusMessage = "Hóa đơn này đã được thanh toán đủ.";
             return;
         }
 
@@ -902,7 +909,7 @@ public class MainViewModel : ViewModelBase
         SelectedInvoice = invoice;
         if (invoice.RemainingAmount <= 0)
         {
-            StatusMessage = "HÃ³a Ä‘Æ¡n nÃ y Ä‘Ã£ Ä‘Æ°á»£c thanh toÃ¡n Ä‘á»§.";
+            StatusMessage = "Hóa đơn này đã được thanh toán đủ.";
             return;
         }
 
@@ -916,7 +923,7 @@ public class MainViewModel : ViewModelBase
     {
         EnsureInvoiceSelected();
         Clipboard.SetText(_invoiceService.CopyText(SelectedInvoice!.Id));
-        StatusMessage = "ÄÃ£ sao chÃ©p hÃ³a Ä‘Æ¡n.";
+        StatusMessage = "Đã sao chép hóa đơn.";
     }
 
     private void CancelInvoice()
@@ -930,19 +937,19 @@ public class MainViewModel : ViewModelBase
     {
         var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "RentalManagerBackups");
         var path = _backupService.BackupTo(folder);
-        StatusMessage = $"ÄÃ£ sao lÆ°u: {path}";
+        StatusMessage = $"Đã sao lưu: {path}";
     }
 
     private void Restore()
     {
-        var dialog = new OpenFileDialog { Filter = "SQLite backup (*.sqlite)|*.sqlite|All files (*.*)|*.*", Title = "Chá»n báº£n sao lÆ°u" };
+        var dialog = new OpenFileDialog { Filter = "SQLite backup (*.sqlite)|*.sqlite|All files (*.*)|*.*", Title = "Chọn bản sao lưu" };
         if (dialog.ShowDialog() == true)
         {
-            var confirm = MessageBox.Show("KhÃ´i phá»¥c báº£n sao lÆ°u nÃ y? Dá»¯ liá»‡u hiá»‡n táº¡i sáº½ bá»‹ thay tháº¿.", "KhÃ´i phá»¥c dá»¯ liá»‡u", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var confirm = MessageBox.Show("Khôi phục bản sao lưu này? Dữ liệu hiện tại sẽ bị thay thế.", "Khôi phục dữ liệu", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes) return;
             _backupService.RestoreFrom(dialog.FileName);
             Load();
-            StatusMessage = "ÄÃ£ khÃ´i phá»¥c dá»¯ liá»‡u.";
+            StatusMessage = "Đã khôi phục dữ liệu.";
         }
     }
 
@@ -951,13 +958,13 @@ public class MainViewModel : ViewModelBase
         _demoDataService.Seed();
         BillingMonth = "2026-04";
         DashboardYear = 2026;
-        DashboardRange = "TÃ¹y chá»n thÃ¡ng";
+        DashboardRange = "Tùy chọn tháng";
         Load();
     }
 
     private void EnsureInvoiceSelected()
     {
-        if (SelectedInvoice is null) throw new ValidationException("Chá»n hÃ³a Ä‘Æ¡n trÆ°á»›c.");
+        if (SelectedInvoice is null) throw new ValidationException("Chọn hóa đơn trước.");
     }
 
     private void Run(Action action)
@@ -965,13 +972,13 @@ public class MainViewModel : ViewModelBase
         try
         {
             action();
-            if (string.IsNullOrWhiteSpace(StatusMessage)) StatusMessage = "ÄÃ£ lÆ°u.";
+            if (string.IsNullOrWhiteSpace(StatusMessage)) StatusMessage = "Đã lưu.";
         }
         catch (Exception ex)
         {
             var message = ErrorMessageMapper.ToUserMessage(ex);
             StatusMessage = message;
-            MessageBox.Show(message, "Quáº£n lÃ½ nhÃ  trá»", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(message, "Quản lý nhà trọ", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -980,24 +987,24 @@ public class MainViewModel : ViewModelBase
         var selectedMonth = DateTime.TryParse($"{BillingMonth}-01", out var parsedMonth) ? parsedMonth : DateTime.Today;
         return DashboardRange switch
         {
-            "ThÃ¡ng hiá»‡n táº¡i" => (DateTime.Today.ToString("yyyy-MM"), DateTime.Today.ToString("yyyy-MM")),
-            "3 thÃ¡ng gáº§n nháº¥t" => (selectedMonth.AddMonths(-2).ToString("yyyy-MM"), selectedMonth.ToString("yyyy-MM")),
-            "6 thÃ¡ng gáº§n nháº¥t" => (selectedMonth.AddMonths(-5).ToString("yyyy-MM"), selectedMonth.ToString("yyyy-MM")),
-            "NÄƒm hiá»‡n táº¡i" => ($"{DashboardYear:0000}-01", $"{DashboardYear:0000}-12"),
+            "Tháng hiện tại" => (DateTime.Today.ToString("yyyy-MM"), DateTime.Today.ToString("yyyy-MM")),
+            "3 tháng gần nhất" => (selectedMonth.AddMonths(-2).ToString("yyyy-MM"), selectedMonth.ToString("yyyy-MM")),
+            "6 tháng gần nhất" => (selectedMonth.AddMonths(-5).ToString("yyyy-MM"), selectedMonth.ToString("yyyy-MM")),
+            "Năm hiện tại" => ($"{DashboardYear:0000}-01", $"{DashboardYear:0000}-12"),
             _ => (BillingMonth, BillingMonth)
         };
     }
 
     private void ApplyDashboardRangeDefaults()
     {
-        if (DashboardRange == "ThÃ¡ng hiá»‡n táº¡i")
+        if (DashboardRange == "Tháng hiện tại")
         {
             _billingMonth = DateTime.Today.ToString("yyyy-MM");
             _dashboardYear = DateTime.Today.Year;
             OnPropertyChanged(nameof(BillingMonth));
             OnPropertyChanged(nameof(DashboardYear));
         }
-        else if (DashboardRange == "NÄƒm hiá»‡n táº¡i")
+        else if (DashboardRange == "Năm hiện tại")
         {
             _dashboardYear = DateTime.Today.Year;
             OnPropertyChanged(nameof(DashboardYear));
@@ -1022,6 +1029,7 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(PaymentFilterYear));
         OnPropertyChanged(nameof(MeterFilterMonth));
         OnPropertyChanged(nameof(MeterFilterYear));
+        RefreshAllFilters();
         LoadDashboard();
     }
 
@@ -1041,24 +1049,24 @@ public class MainViewModel : ViewModelBase
         RoomSearch = string.Empty;
         RoomRepresentativeSearch = string.Empty;
         RoomFilterPropertyId = 0;
-        RoomFilterStatus = "Táº¥t cáº£";
+        RoomFilterStatus = "Tất cả";
         TenantSearch = string.Empty;
-        TenantStatusFilter = "Táº¥t cáº£";
+        TenantStatusFilter = "Tất cả";
         AssignmentFilterPropertyId = 0;
         AssignmentFilterRoomId = 0;
-        AssignmentHistoryFilter = "ÄÃ£ káº¿t thÃºc";
+        AssignmentHistoryFilter = "Đã kết thúc";
         InvoiceSearch = string.Empty;
         InvoiceFilterMonth = SelectedBillingMonth;
         InvoiceFilterYear = SelectedBillingYear;
         InvoiceFilterPropertyId = 0;
         InvoiceFilterRoomId = 0;
-        InvoiceFilterStatus = "Táº¥t cáº£";
+        InvoiceFilterStatus = "Tất cả";
         PaymentSearch = string.Empty;
         PaymentFilterMonth = SelectedBillingMonth;
         PaymentFilterYear = SelectedBillingYear;
         PaymentFilterPropertyId = 0;
         PaymentFilterRoomId = 0;
-        PaymentFilterMethod = "Táº¥t cáº£";
+        PaymentFilterMethod = "Tất cả";
         MeterFilterMonth = SelectedBillingMonth;
         MeterFilterYear = SelectedBillingYear;
         MeterFilterPropertyId = 0;
@@ -1068,7 +1076,7 @@ public class MainViewModel : ViewModelBase
         RoomFeePropertyFilterId = 0;
         RoomFeeRoomFilterId = 0;
         RoomFeeFeeTypeFilterId = 0;
-        RoomFeeStatusFilter = "Äang Ã¡p dá»¥ng";
+        RoomFeeStatusFilter = "Đang áp dụng";
         RefreshAllFilters();
     }
 
@@ -1092,7 +1100,7 @@ public class MainViewModel : ViewModelBase
             rooms = rooms.Where(x => x.PropertyId == RoomFilterPropertyId);
         }
 
-        if (RoomFilterStatus != "Táº¥t cáº£")
+        if (RoomFilterStatus != "Tất cả")
         {
             rooms = rooms.Where(x => x.StatusText == RoomFilterStatus);
         }
@@ -1114,15 +1122,15 @@ public class MainViewModel : ViewModelBase
     {
         var text = TenantSearch.Trim();
         IEnumerable<Tenant> tenants = Tenants;
-        if (TenantStatusFilter == "Äang thuÃª")
+        if (TenantStatusFilter == "Đang thuê")
         {
             tenants = tenants.Where(HasActiveAssignment);
         }
-        else if (TenantStatusFilter == "ChÆ°a phÃ¢n phÃ²ng")
+        else if (TenantStatusFilter == "Chưa phân phòng")
         {
             tenants = tenants.Where(x => !HasAnyAssignment(x));
         }
-        else if (TenantStatusFilter == "ÄÃ£ tá»«ng thuÃª")
+        else if (TenantStatusFilter == "Đã từng thuê")
         {
             tenants = tenants.Where(x => !HasActiveAssignment(x) && HasEndedAssignment(x));
         }
@@ -1151,11 +1159,11 @@ public class MainViewModel : ViewModelBase
         Replace(ActiveRoomTenants, assignments.Where(x => x.Status == RoomTenantStatus.Active));
 
         IEnumerable<RoomTenant> history = assignments;
-        if (AssignmentHistoryFilter == "ÄÃ£ káº¿t thÃºc")
+        if (AssignmentHistoryFilter == "Đã kết thúc")
         {
             history = history.Where(x => x.Status == RoomTenantStatus.Ended);
         }
-        else if (AssignmentHistoryFilter == "Äang thuÃª")
+        else if (AssignmentHistoryFilter == "Đang thuê")
         {
             history = history.Where(x => x.Status == RoomTenantStatus.Active);
         }
@@ -1178,7 +1186,7 @@ public class MainViewModel : ViewModelBase
             invoices = invoices.Where(x => x.RoomId == InvoiceFilterRoomId);
         }
 
-        if (InvoiceFilterStatus != "Táº¥t cáº£")
+        if (InvoiceFilterStatus != "Tất cả")
         {
             invoices = invoices.Where(x => x.StatusText == InvoiceFilterStatus);
         }
@@ -1206,7 +1214,7 @@ public class MainViewModel : ViewModelBase
             payments = payments.Where(x => x.Invoice?.RoomId == PaymentFilterRoomId);
         }
 
-        if (PaymentFilterMethod != "Táº¥t cáº£")
+        if (PaymentFilterMethod != "Tất cả")
         {
             payments = payments.Where(x => x.MethodText == PaymentFilterMethod);
         }
@@ -1226,8 +1234,8 @@ public class MainViewModel : ViewModelBase
         if (RoomFeeRoomFilterId > 0) configs = configs.Where(x => x.RoomId == RoomFeeRoomFilterId);
         if (RoomFeeFeeTypeFilterId > 0) configs = configs.Where(x => x.FeeTypeId == RoomFeeFeeTypeFilterId);
         if (RoomFeeEnabledOnly) configs = configs.Where(x => x.Enabled);
-        if (RoomFeeStatusFilter == "Äang Ã¡p dá»¥ng") configs = configs.Where(x => x.Enabled);
-        if (RoomFeeStatusFilter == "Ngá»«ng Ã¡p dá»¥ng") configs = configs.Where(x => !x.Enabled);
+        if (RoomFeeStatusFilter == "Đang áp dụng") configs = configs.Where(x => x.Enabled);
+        if (RoomFeeStatusFilter == "Ngừng áp dụng") configs = configs.Where(x => !x.Enabled);
         if (!string.IsNullOrWhiteSpace(RoomFeeSearch))
         {
             configs = configs.Where(x => Contains(x.PropertyName, RoomFeeSearch) || Contains(x.RoomName, RoomFeeSearch) || Contains(x.FeeTypeName, RoomFeeSearch));
@@ -1297,7 +1305,7 @@ public class MainViewModel : ViewModelBase
 
     private static void RequireExisting(int id)
     {
-        if (id <= 0) throw new ValidationException("Chá»n dÃ²ng cáº§n sá»­a trÆ°á»›c khi lÆ°u thay Ä‘á»•i.");
+        if (id <= 0) throw new ValidationException("Chọn dòng cần sửa trước khi lưu thay đổi.");
     }
 
     private static bool Contains(string? value, string search)
