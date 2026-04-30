@@ -5,7 +5,7 @@ namespace RentalManager.Data;
 
 public static class DbContextFactory
 {
-    public static string DatabasePath { get; } = Path.Combine(
+    public static string DatabasePath { get; } = Environment.GetEnvironmentVariable("RENTALMANAGER_DB_PATH") ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "RentalManager",
         "rental-manager.sqlite");

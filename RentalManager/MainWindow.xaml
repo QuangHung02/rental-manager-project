@@ -164,7 +164,7 @@
                             <DataGridTextColumn Header="Người đại diện" Binding="{Binding RepresentativeTenantName}" Width="170"/>
                             <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="130"/>
                             <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="220"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="150">
+                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -282,7 +282,7 @@
                                     <DataGridTextColumn Header="Đã thu" Binding="{Binding PaidAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
                                     <DataGridTextColumn Header="Còn lại" Binding="{Binding RemainingAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
                                     <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="115"/>
-                                    <DataGridTemplateColumn Header="Hành động" Width="330">
+                                    <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -392,7 +392,7 @@
                             <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180"/>
                             <DataGridTextColumn Header="CCCD/CMND" Binding="{Binding IdentityNumber}" Width="140"/>
                             <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="240"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="90">
+                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="Sửa" Command="{Binding DataContext.EditTenantRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
@@ -449,7 +449,7 @@
                                     <DataGridTextColumn Header="Người thuê" Binding="{Binding TenantName}" Width="170"/>
                                     <DataGridTextColumn Header="Vai trò" Binding="{Binding RepresentativeText}" Width="110"/>
                                     <DataGridTextColumn Header="Ngày bắt đầu" Binding="{Binding StartDate, StringFormat=d}" Width="110"/>
-                                    <DataGridTemplateColumn Header="Hành động" Width="300">
+                                    <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -518,7 +518,7 @@
                             <DataGridTextColumn Header="Cách tính" Binding="{Binding CalculationTypeText}" Width="105"/>
                             <DataGridTextColumn Header="Giá áp dụng" Binding="{Binding AppliedPriceText}" Width="125"/>
                             <DataGridTextColumn Header="Trạng thái" Binding="{Binding EnabledText}" Width="110"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="120">
+                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -557,7 +557,7 @@
                             <DataGridTextColumn Header="Đơn giá" Binding="{Binding DefaultUnitPrice, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="120"/>
                             <DataGridTextColumn Header="Loại hệ thống" Binding="{Binding SystemStatusText}" Width="110"/>
                             <DataGridTextColumn Header="Trạng thái" Binding="{Binding ActiveStatusText}" Width="110"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="150">
+                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -593,7 +593,7 @@
                             <DataGridTextColumn Header="Địa chỉ" Binding="{Binding Address}" Width="260"/>
                             <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="220"/>
                             <DataGridTextColumn Header="Trạng thái" Binding="{Binding ActiveStatusText}" Width="130"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="150">
+                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -616,6 +616,56 @@
                     <Button Content="Khôi phục từ bản sao lưu" Width="280" HorizontalAlignment="Left" Command="{Binding RestoreCommand}"/>
                     <Button Content="Tạo dữ liệu mẫu" Width="280" HorizontalAlignment="Left" Command="{Binding SeedDemoDataCommand}"/>
                 </StackPanel>
+            </TabItem>
+            <TabItem x:Name="AutomationTab" Header="AI &amp; Automation">
+                <DockPanel Margin="16">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tích hợp AI &amp; Automation"/>
+                    
+                    <materialDesign:Card DockPanel.Dock="Top" Margin="0,0,0,16" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="Thông tin CLI" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
+                            <TextBlock Text="- CLI cho phép công cụ AI/automation thao tác với app thông qua dòng lệnh." TextWrapping="Wrap"/>
+                            <TextBlock Text="- Dữ liệu vẫn nằm local trên máy người dùng, App không cần server online, không tự gửi dữ liệu ra ngoài." TextWrapping="Wrap" Margin="0,0,0,16"/>
+                            
+                            <StackPanel Orientation="Horizontal" Margin="0,4">
+                                <TextBlock Text="Trạng thái CLI: " FontWeight="SemiBold" Width="120"/>
+                                <TextBlock Text="{Binding CliStatusText}" Foreground="{Binding CliStatusColor}" FontWeight="Bold"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,4">
+                                <TextBlock Text="Đường dẫn CLI: " FontWeight="SemiBold" Width="120"/>
+                                <TextBox Text="{Binding ResolvedCliPath, Mode=OneWay}" IsReadOnly="True" MinWidth="400" Background="Transparent" BorderThickness="0"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,4">
+                                <TextBlock Text="Đường dẫn DB: " FontWeight="SemiBold" Width="120"/>
+                                <TextBox Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" MinWidth="400" Background="Transparent" BorderThickness="0"/>
+                            </StackPanel>
+                            
+                            <Button Content="Mở tài liệu (CLI_USAGE.md)" Command="{Binding OpenDocsCommand}" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Ví dụ các lệnh thường dùng:" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
+                            
+                            <GroupBox Header="1. Ghi nhận chỉ số điện nước" Margin="0,0,0,8">
+                                <TextBox Text="RentalManager.Cli.exe meter add --property &quot;Nhà A&quot; --room &quot;Phòng 202&quot; --fee &quot;Điện&quot; --month &quot;2026-04&quot; --current 160" IsReadOnly="True" TextWrapping="Wrap" Background="{DynamicResource MaterialDesignPaper}"/>
+                            </GroupBox>
+                            
+                            <GroupBox Header="2. Tạo hóa đơn" Margin="0,0,0,8">
+                                <TextBox Text="RentalManager.Cli.exe invoice create --property &quot;Nhà A&quot; --room &quot;Phòng 202&quot; --month &quot;2026-04&quot;" IsReadOnly="True" TextWrapping="Wrap" Background="{DynamicResource MaterialDesignPaper}"/>
+                            </GroupBox>
+                            
+                            <GroupBox Header="3. Xem hóa đơn chưa thanh toán" Margin="0,0,0,8">
+                                <TextBox Text="RentalManager.Cli.exe invoice unpaid --month &quot;2026-04&quot;" IsReadOnly="True" TextWrapping="Wrap" Background="{DynamicResource MaterialDesignPaper}"/>
+                            </GroupBox>
+                            
+                            <GroupBox Header="4. Ghi nhận thanh toán" Margin="0,0,0,8">
+                                <TextBox Text="RentalManager.Cli.exe payment add --invoice 12 --amount 3550000 --method &quot;BankTransfer&quot; --note &quot;Chuyển khoản&quot;" IsReadOnly="True" TextWrapping="Wrap" Background="{DynamicResource MaterialDesignPaper}"/>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
             </TabItem>
         </TabControl>
     </DockPanel>

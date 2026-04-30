@@ -33,7 +33,8 @@ public partial class MainWindow : Window
             MeterReadingsTab,
             InvoicesTab,
             PaymentsTab,
-            SettingsTab
+            SettingsTab,
+            AutomationTab
         };
 
         MainTabs.Items.Clear();

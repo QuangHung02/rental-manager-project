@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using RentalManager.Data;
 using RentalManager.Enums;
 using RentalManager.Helpers;
@@ -86,7 +86,7 @@ public class MeterReadingService : CrudService<MeterReading>
     {
         using var db = DbContextFactory.Create();
         return db.MeterReadings
-            .Where(x => x.RoomId == roomId && x.FeeTypeId == feeTypeId && string.Compare(x.BillingMonth, billingMonth, StringComparison.Ordinal) < 0)
+            .Where(x => x.RoomId == roomId && x.FeeTypeId == feeTypeId && x.BillingMonth.CompareTo(billingMonth) < 0)
             .OrderByDescending(x => x.BillingMonth)
             .Select(x => x.CurrentReading)
             .FirstOrDefault();

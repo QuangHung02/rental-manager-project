@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -124,6 +124,7 @@ public class MainViewModel : ViewModelBase
         BackupCommand = new RelayCommand(() => Run(Backup));
         RestoreCommand = new RelayCommand(() => Run(Restore));
         SeedDemoDataCommand = new RelayCommand(() => Run(SeedDemoData));
+        OpenDocsCommand = new RelayCommand(OpenDocs);
         ApplyFiltersCommand = new RelayCommand(RefreshAllFilters);
         ClearFiltersCommand = new RelayCommand(ClearFilters);
         CancelPropertyEditCommand = new RelayCommand(CancelPropertyEdit, () => NewProperty.Id > 0);
@@ -814,6 +815,31 @@ public class MainViewModel : ViewModelBase
     }
 
     public string DatabasePath => _backupService.DatabasePath;
+
+    public string CliPath
+    {
+        get
+        {
+            var basePath = AppDomain.CurrentDomain.BaseDirectory;
+            return Path.GetFullPath(Path.Combine(basePath, "..\\..\\..\\..\\..\\RentalManager.Cli\\bin\\Debug\\net8.0-windows\\RentalManager.Cli.exe"));
+        }
+    }
+    
+    public string ResolvedCliPath
+    {
+        get
+        {
+            var path1 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RentalManager.Cli.exe");
+            if (File.Exists(path1)) return path1;
+            
+            var path2 = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\RentalManager.Cli\\bin\\Debug\\net8.0-windows\\RentalManager.Cli.exe"));
+            return path2;
+        }
+    }
+
+    public bool IsCliAvailable => File.Exists(ResolvedCliPath);
+    public string CliStatusText => IsCliAvailable ? "Đã cài đặt (Sẵn sàng)" : "Không tìm thấy file thực thi";
+    public string CliStatusColor => IsCliAvailable ? "Green" : "Red";
     public string PropertyFormMode => NewProperty.Id > 0 ? $"Đang sửa: {NewProperty.Name}" : "Đang thêm mới";
     public string RoomFormMode => NewRoom.Id > 0 ? $"Đang sửa: {NewRoom.RoomName}" : "Đang thêm mới";
     public string TenantFormMode => NewTenant.Id > 0 ? $"Đang sửa: {NewTenant.FullName}" : "Đang thêm mới";
@@ -879,6 +905,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand CancelFeeTypeEditCommand { get; }
     public RelayCommand CancelRoomFeeConfigEditCommand { get; }
     public RelayCommand RefreshCommand { get; }
+    public RelayCommand OpenDocsCommand { get; }
     public RelayCommand<Property> EditPropertyRowCommand { get; }
     public RelayCommand<Property> DeactivatePropertyRowCommand { get; }
     public RelayCommand<Room> EditRoomRowCommand { get; }
@@ -963,6 +990,19 @@ public class MainViewModel : ViewModelBase
         if (SelectedProperty is null) throw new ValidationException("Chọn nhà/khu trọ trước.");
         _propertyService.Deactivate(SelectedProperty.Id);
         Load();
+    }
+
+    private void OpenDocs()
+    {
+        var docsPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\..\\docs\\CLI_USAGE.md"));
+        if (File.Exists(docsPath))
+        {
+            Process.Start(new ProcessStartInfo { FileName = docsPath, UseShellExecute = true });
+        }
+        else
+        {
+            MessageBox.Show("Không tìm thấy file tài liệu CLI_USAGE.md", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 
     private void CancelPropertyEdit()
