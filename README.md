@@ -128,12 +128,3 @@ Với kiến trúc này, logic nghiệp vụ được tập trung tại tầng S
 * **Nâng cấp Database:** Entity Framework Core giúp việc chuyển đổi sang cơ sở dữ liệu lớn (như SQL Server hay PostgreSQL) trở nên khả thi hơn. Dù vậy, quá trình chuyển đổi thực tế sẽ luôn đòi hỏi thiết lập hạ tầng (Infrastructure), viết các file Migrations, xử lý tranh chấp đồng thời (Concurrency), sao lưu (Backup), triển khai (Deployment) và kiểm thử (Testing) kỹ lưỡng.
 * **Web API:** Lớp `Services` tạo nền tảng thuận lợi để tách thành Web API trong tương lai, nhưng vẫn cần thực hiện xác thực (Authentication), phân quyền (Authorization), xử lý tranh chấp (Concurrency handling), quy trình triển khai (Deployment) và kiểm thử bảo mật (Security testing).
 * **Tích hợp AI Agent:** Vì CLI có thể xuất ra JSON dự đoán được, các lập trình viên có thể kết hợp với các framework AI như OpenAI/LangChain để quản lý dữ liệu khu trọ bằng "Ngôn ngữ tự nhiên" mà không cần phải đụng chạm đến logic giao diện.
-
----
-
-## 🔒 Dữ liệu & Bảo mật riêng tư (Data & Privacy)
-* **Lưu trữ Local-first:** Mọi dữ liệu của ứng dụng được lưu trữ hoàn toàn trên file SQLite nội bộ máy tính của bạn.
-* **Không lưu trữ Đám mây (No Cloud):** Ứng dụng mặc định không đẩy bất kỳ dữ liệu nào lên server hay cloud của bên thứ ba.
-* **Bảo mật mã nguồn:** Tuyệt đối không commit (đẩy) file database thực tế chứa thông tin nhạy cảm của khách thuê lên GitHub hay bất kỳ repository công khai nào.
-* **Sao lưu (Backup):** Người dùng nên có thói quen tự sao lưu (copy) file database định kỳ để phòng ngừa rủi ro mất mát dữ liệu do hỏng hóc thiết bị.
-
