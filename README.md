@@ -137,20 +137,3 @@ Với kiến trúc này, logic nghiệp vụ được tập trung tại tầng S
 * **Bảo mật mã nguồn:** Tuyệt đối không commit (đẩy) file database thực tế chứa thông tin nhạy cảm của khách thuê lên GitHub hay bất kỳ repository công khai nào.
 * **Sao lưu (Backup):** Người dùng nên có thói quen tự sao lưu (copy) file database định kỳ để phòng ngừa rủi ro mất mát dữ liệu do hỏng hóc thiết bị.
 
----
-
-## 🗺️ Lộ trình phát triển (Roadmap)
-* [ ] Xuất dữ liệu ra file Excel (Excel Export).
-* [ ] Nhập dữ liệu từ file Excel có kiểm tra tính hợp lệ (Excel Import with validation).
-* [ ] Chức năng sao lưu và phục hồi cơ sở dữ liệu (Backup/restore database).
-* [ ] Bảng điều khiển báo cáo chuyên sâu (Reporting dashboard).
-* [ ] (Tùy chọn) Triển khai Local API phục vụ tự động hóa nâng cao.
-
----
-
-## 📄 Giấy phép (License)
-Dự án được phát hành theo giấy phép MIT. Xem chi tiết tại [LICENSE](LICENSE).
-
----
-
-*Xây dựng với ❤️ dành cho quản lý phòng trọ hiện đại.*
