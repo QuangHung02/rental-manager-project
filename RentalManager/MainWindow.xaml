@@ -12,6 +12,7 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         Title="Quản lý nhà trọ" Icon="Assets/appicon.ico" Height="780" Width="1240" MinHeight="680" MinWidth="1040">
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="4,0,4,2"/>
@@ -70,7 +71,7 @@
             <StatusBarItem Content="{Binding StatusMessage}"/>
         </StatusBar>
 
-        <TabControl x:Name="MainTabs" TabStripPlacement="Left" Margin="0,4,0,0">
+                <TabControl x:Name="MainTabs" TabStripPlacement="Left" Margin="0,4,0,0">
             <TabItem x:Name="DashboardTab" Header="Tổng quan">
                 <DockPanel Margin="8">
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tổng quan tháng"/>
@@ -128,49 +129,385 @@
                     </Grid>
                 </DockPanel>
             </TabItem>
+                                                <TabItem Header="Nhà &amp; Phòng">
+                <!-- Internal toggle: Quản lý phòng | Danh mục khoản phí -->
+                <TabControl TabStripPlacement="Top">
+                    <TabItem Header="Quản lý phòng">
+                        <Grid>
+                    <!-- ── MAIN CONTENT ── -->
+                    <DockPanel Panel.ZIndex="1">
+                        <!-- Top action bar -->
+                        <Border DockPanel.Dock="Top" Padding="16,10" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}">
+                            <DockPanel>
+                                <TextBlock Text="Nhà &amp; Phòng" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="＋ Thêm nhiều phòng" Command="{Binding OpenBulkRoomDrawerCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
+                                    <Button Content="＋ Thêm phòng" Command="{Binding OpenAddRoomDrawerCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                                    <Button Content="＋ Thêm nhà" Command="{Binding OpenAddPropertyDrawerCommand}" Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <!-- Property selector strip -->
+                        <Border DockPanel.Dock="Top" Background="{DynamicResource PrimaryHueLightBrush}" Padding="8,4">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <ListBox ItemsSource="{Binding Properties}" SelectedItem="{Binding SelectedProperty}"
+                                         Background="Transparent" BorderThickness="0">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+                                            <Setter Property="Padding" Value="14,6"/>
+                                            <Setter Property="Margin" Value="2,0"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueLightForegroundBrush}"/>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                                                <TextBlock Text="{Binding Address}" FontSize="10" Opacity="0.75" TextTrimming="CharacterEllipsis" MaxWidth="160"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </ScrollViewer>
+                        </Border>
+                        <!-- Room cards -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="16,12,16,16">
+                                <TextBlock Text="Chọn nhà để xem danh sách phòng. Bấm ‘Khoản phí’ trên từng phòng để thêm hoặc quản lý điện, nước, wifi, rác và các phí khác."
+                                       FontSize="12" Opacity="0.6" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                <TextBlock Text="{Binding WorkspacePropertyHeader}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,12" Opacity="0.8"/>
+                                <ItemsControl ItemsSource="{Binding WorkspaceRooms}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <materialDesign:Card Margin="6" Width="290" Padding="0" materialDesign:ElevationAssist.Elevation="Dp2">
+                                                <DockPanel>
+                                                    <!-- Status bar at top of card -->
+                                                    <Border DockPanel.Dock="Top" Background="{DynamicResource PrimaryHueLightBrush}" Padding="12,4">
+                                                        <DockPanel>
+                                                            <TextBlock Text="{Binding RoomName}" FontWeight="Bold" FontSize="15"
+                                                                       Foreground="{DynamicResource PrimaryHueLightForegroundBrush}" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding StatusText}" FontSize="11"
+                                                                       Foreground="{DynamicResource PrimaryHueLightForegroundBrush}"
+                                                                       HorizontalAlignment="Right" VerticalAlignment="Center" Opacity="0.85"/>
+                                                        </DockPanel>
+                                                    </Border>
+                                                    <!-- Card body -->
+                                                    <StackPanel Margin="12,10,12,12">
+                                                        <TextBlock Text="{Binding BaseRent, StringFormat='{}{0:N0} ₫'}" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                                            <materialDesign:PackIcon Kind="AccountCircleOutline" Width="14" Height="14" VerticalAlignment="Center" Opacity="0.55" Margin="0,0,4,0"/>
+                                                            <TextBlock Text="{Binding RepresentativeTenantName}" FontSize="12" Opacity="0.7" TextTrimming="CharacterEllipsis" MaxWidth="220"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                            <materialDesign:PackIcon Kind="Stairs" Width="14" Height="14" VerticalAlignment="Center" Opacity="0.45" Margin="0,0,4,0"/>
+                                                            <TextBlock Text="{Binding Floor, StringFormat='Tầng {0}'}" FontSize="11" Opacity="0.55"/>
+                                                        </StackPanel>
+                                                        <!-- Action buttons -->
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Button Content="Sửa" Margin="0,0,4,0" Height="30" FontSize="12" Padding="8,0"
+                                                                    Command="{Binding DataContext.OpenEditRoomDrawerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                                                            <Button Content="Khoản phí" Margin="0,0,4,0" Height="30" FontSize="12" Padding="8,0"
+                                                                    Command="{Binding DataContext.OpenRoomFeeDrawerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                                                            <Button Content="Trả phòng" Margin="0,0,0,0" Height="30" FontSize="12" Padding="8,0"
+                                                                    Command="{Binding DataContext.DeactivateRoomRowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </materialDesign:Card>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
 
-            <TabItem x:Name="RoomsTab" Header="Phòng">
+                    <!-- ── OVERLAY DIMMER ── -->
+                    <Border Panel.ZIndex="50" Background="#70000000"
+                            Visibility="{Binding IsDrawerOpen, Converter={StaticResource BoolToVis}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding CloseDrawerCommand}"/>
+                        </Border.InputBindings>
+                    </Border>
+
+                    <!-- ── PROPERTY DRAWER ── -->
+                    <Border Panel.ZIndex="51" Width="420" HorizontalAlignment="Right"
+                            Background="{DynamicResource MaterialDesignPaper}"
+                            Visibility="{Binding IsPropertyDrawerOpen, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Command="{Binding CloseDrawerCommand}"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
+                                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                    </Button>
+                                    <TextBlock Text="{Binding PropertyFormMode}" FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="20,0,20,20">
+                                <Button Content="Thêm mới" Command="{Binding AddPropertyCommand}" Margin="0,0,8,0"/>
+                                <Button Content="Lưu thay đổi" Command="{Binding SavePropertyCommand}" Margin="0,0,8,0"/>
+                                <Button Content="Hủy sửa" Command="{Binding CancelPropertyEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                            </StackPanel>
+                            <ScrollViewer Margin="20,16,20,8" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Tên nhà / khu trọ" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding NewProperty.Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+                                    <TextBlock Text="Địa chỉ" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding NewProperty.Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+                                    <TextBlock Text="Ghi chú" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding NewProperty.Note, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+                                    <Button Content="Ngừng sử dụng" Command="{Binding DeactivatePropertyCommand}"
+                                            Style="{StaticResource MaterialDesignOutlinedButton}" HorizontalAlignment="Left" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ── ROOM DRAWER ── -->
+                    <Border Panel.ZIndex="51" Width="460" HorizontalAlignment="Right"
+                            Background="{DynamicResource MaterialDesignPaper}"
+                            Visibility="{Binding IsRoomDrawerOpen, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Command="{Binding CloseDrawerCommand}"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
+                                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                    </Button>
+                                    <TextBlock Text="{Binding RoomFormMode}" FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="20,0,20,20">
+                                <Button Content="Thêm mới" Command="{Binding AddRoomCommand}" Margin="0,0,8,0"/>
+                                <Button Content="Lưu thay đổi" Command="{Binding SaveRoomCommand}" Margin="0,0,8,0"/>
+                                <Button Content="Hủy sửa" Command="{Binding CancelRoomEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
+                                <Button Content="Trả phòng" Command="{Binding DeactivateRoomCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                            </StackPanel>
+                            <ScrollViewer Margin="20,16,20,8" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Nhà / khu trọ" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding NewRoom.PropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Margin="0,0,0,14"/>
+                                    <TextBlock Text="Tên phòng" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding NewRoom.RoomName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+                                    <TextBlock Text="Tầng" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding NewRoom.Floor, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+                                    <TextBlock Text="Tiền phòng (₫)" Margin="0,0,0,4"/>
+                                    <TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoom.BaseRent, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Margin="0,0,0,14"/>
+                                    <TextBlock Text="Trạng thái" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding RoomFormStatusOptions}" SelectedValue="{Binding NewRoom.Status}" SelectedValuePath="Value" DisplayMemberPath="Text" Margin="0,0,0,8"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ── BULK ROOM DRAWER ── -->
+                    <Border Panel.ZIndex="51" Width="460" HorizontalAlignment="Right"
+                            Background="{DynamicResource MaterialDesignPaper}"
+                            Visibility="{Binding IsBulkRoomDrawerOpen, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Command="{Binding CloseDrawerCommand}"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
+                                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                    </Button>
+                                    <TextBlock Text="Thêm nhiều phòng cùng lúc" FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="20,0,20,20">
+                                <Button Content="Tạo nhiều phòng" Command="{Binding AddRoomsRangeCommand}" Margin="0,0,8,0"/>
+                                <Button Content="Đóng" Command="{Binding CloseDrawerCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                            </StackPanel>
+                            <ScrollViewer Margin="20,16,20,8" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Border Padding="12,8" Background="#f0f7ff" Margin="0,0,0,16" CornerRadius="4">
+                                        <TextBlock TextWrapping="Wrap" Foreground="#1565c0" FontSize="12">
+                                            <Run>Ví dụ: Tiền tố = </Run><Run FontStyle="Italic">Phòng </Run>
+                                            <Run>, Từ = 101, Đến = 110 → tạo Phòng 101 … Phòng 110.</Run>
+                                            <LineBreak/><Run>Phòng đã tồn tại sẽ bị bỏ qua. Tối đa 100 phòng mỗi lần.</Run>
+                                        </TextBlock>
+                                    </Border>
+                                    <TextBlock Text="Nhà / khu trọ" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding BulkRoomPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Margin="0,0,0,14"/>
+                                    <TextBlock Text="Tiền tố tên phòng (tùy chọn)" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding BulkRoomPrefix, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+                                    <Grid Margin="0,0,0,14">
+                                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Số bắt đầu" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding BulkRoomStart, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Số kết thúc" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding BulkRoomEnd, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="Giá thuê mặc định (₫, tùy chọn)" Margin="0,0,0,4"/>
+                                    <TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding BulkRoomBaseRent, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Margin="0,0,0,8"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ── ROOM FEE MODAL (centered) ── -->
+                    <Border Panel.ZIndex="51"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            MaxWidth="860" MaxHeight="680"
+                            Width="Auto" MinWidth="600"
+                            Margin="40"
+                            Background="{DynamicResource MaterialDesignPaper}"
+                            CornerRadius="6"
+                            Visibility="{Binding IsRoomFeeDrawerOpen, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Command="{Binding CloseDrawerCommand}"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
+                                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                    </Button>
+                                    <TextBlock Text="{Binding WorkspaceRoomHeader}" FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
+                            <DockPanel Margin="16">
+                                <!-- Fee add/edit form (compact horizontal) -->
+                                <GroupBox DockPanel.Dock="Top" Header="{Binding RoomFeeFormMode}" Margin="0,0,0,10">
+                                    <WrapPanel>
+                                        <StackPanel><TextBlock Text="Khoản phí"/><ComboBox ItemsSource="{Binding FeeTypes}" SelectedValue="{Binding NewRoomFeeFeeTypeId}" SelectedValuePath="Id" DisplayMemberPath="DisplayName" Width="150"/></StackPanel>
+                                        <StackPanel><TextBlock Text="Cách tính"/><ComboBox ItemsSource="{Binding CalculationTypeOptions}" SelectedValue="{Binding NewRoomFeeCalculationType}" SelectedValuePath="Value" DisplayMemberPath="Text" Width="130"/></StackPanel>
+                                        <StackPanel Visibility="{Binding RoomFeeUnitPriceVisibility}"><TextBlock Text="Đơn giá"/><TextBox IsEnabled="{Binding RoomFeeCustomPriceInputEnabled}" helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoomFeeConfig.UnitPrice, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="120"/></StackPanel>
+                                        <StackPanel Visibility="{Binding RoomFeeFixedAmountVisibility}"><TextBlock Text="Số tiền cố định"/><TextBox IsEnabled="{Binding RoomFeeCustomPriceInputEnabled}" helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoomFeeConfig.FixedAmount, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="120"/></StackPanel>
+                                        <StackPanel Visibility="{Binding RoomFeeQuantityVisibility}"><TextBlock Text="Số lượng"/><TextBox Text="{Binding NewRoomFeeConfig.Quantity, UpdateSourceTrigger=PropertyChanged}" Width="80"/></StackPanel>
+                                        <CheckBox Content="Dùng giá mặc định" IsChecked="{Binding NewRoomFeeUseDefaultPrice}" IsEnabled="{Binding RoomFeeDefaultPriceInputEnabled}" Visibility="{Binding RoomFeeDefaultPriceVisibility}" VerticalAlignment="Bottom" Margin="4,0,4,6"/>
+                                        <CheckBox Content="Đang áp dụng" IsChecked="{Binding NewRoomFeeConfig.Enabled}" VerticalAlignment="Bottom" Margin="4,0,4,6"/>
+                                        <Button Content="Thêm mới" Command="{Binding AddRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
+                                        <Button Content="Lưu thay đổi" Command="{Binding SaveRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
+                                        <Button Content="Hủy sửa" Command="{Binding CancelRoomFeeConfigEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" VerticalAlignment="Bottom"/>
+                                    </WrapPanel>
+                                </GroupBox>
+                                <!-- Applied fees table -->
+                                <TextBlock DockPanel.Dock="Top" Text="Khoản phí đang áp dụng" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <DataGrid ItemsSource="{Binding WorkspaceRoomFees}" SelectedItem="{Binding SelectedRoomFeeConfig}" SelectionMode="Single" Margin="0">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Khoản phí" Binding="{Binding FeeTypeName}" Width="*"/>
+                                        <DataGridTextColumn Header="Cách tính" Binding="{Binding CalculationTypeText}" Width="90"/>
+                                        <DataGridTextColumn Header="Giá" Binding="{Binding AppliedPriceText}" Width="90"/>
+                                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding EnabledText}" Width="80"/>
+                                        <DataGridTemplateColumn Header="Thao tác" Width="SizeToCells">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Content="Sửa" Command="{Binding DataContext.EditRoomFeeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
+                                                        <Button Content="{Binding ToggleActionText}" Command="{Binding DataContext.DisableRoomFeeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+                    </TabItem>
+                    <TabItem Header="Danh mục khoản phí">
+                        <DockPanel Margin="16,12,16,16">
+                            <TextBlock DockPanel.Dock="Top" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4" Text="Danh mục khoản phí"/>
+                            <TextBlock DockPanel.Dock="Top" FontSize="12" Opacity="0.6" Margin="0,0,0,14" TextWrapping="Wrap"
+                                       Text="Quản lý các loại phí toàn cục: Điện, Nước, Wifi, Rác, Giữ xe và các khoản phí khác. Sau khi thêm khoản phí, mở thẻ ‘Quản lý phòng’ và bấm ‘Khoản phí’ trên từng phòng để áp dụng."/>
+                            <!-- Add/edit form -->
+                            <GroupBox DockPanel.Dock="Top" Header="{Binding FeeTypeFormMode}" Margin="0,0,0,12">
+                                <WrapPanel>
+                                    <StackPanel><TextBlock Text="Tên khoản phí"/><TextBox Text="{Binding NewFeeType.Name, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Cách tính"/><ComboBox ItemsSource="{Binding CalculationTypeOptions}" SelectedValue="{Binding NewFeeType.DefaultCalculationType}" SelectedValuePath="Value" DisplayMemberPath="Text"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Đơn vị"/><TextBox Text="{Binding NewFeeType.DefaultUnit, UpdateSourceTrigger=PropertyChanged}" Width="100"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Đơn giá mặc định"/><TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewFeeType.DefaultUnitPrice, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
+                                    <Button Content="Thêm mới" Command="{Binding AddFeeTypeCommand}" VerticalAlignment="Bottom"/>
+                                    <Button Content="Sửa dòng chọn" Command="{Binding EditFeeTypeCommand}" VerticalAlignment="Bottom"/>
+                                    <Button Content="Lưu thay đổi" Command="{Binding SaveFeeTypeCommand}" VerticalAlignment="Bottom"/>
+                                    <Button Content="Hủy sửa" Command="{Binding CancelFeeTypeEditCommand}" VerticalAlignment="Bottom"/>
+                                    <Button Content="{Binding SelectedFeeTypeToggleActionText}" Command="{Binding DeactivateFeeTypeCommand}" VerticalAlignment="Bottom"/>
+                                </WrapPanel>
+                            </GroupBox>
+                            <!-- Fee type list -->
+                            <DataGrid ItemsSource="{Binding FeeTypes}" SelectedItem="{Binding SelectedFeeType}" SelectionMode="Single">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Tên khoản phí" Binding="{Binding DisplayName}" Width="160"/>
+                                    <DataGridTextColumn Header="Cách tính" Binding="{Binding CalculationTypeText}" Width="130"/>
+                                    <DataGridTextColumn Header="Đơn vị" Binding="{Binding DefaultUnit}" Width="100"/>
+                                    <DataGridTextColumn Header="Đơn giá" Binding="{Binding DefaultUnitPrice, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="120"/>
+                                    <DataGridTextColumn Header="Loại" Binding="{Binding SystemStatusText}" Width="110"/>
+                                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding ActiveStatusText}" Width="110"/>
+                                    <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Content="Sửa" Command="{Binding DataContext.EditFeeTypeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
+                                                    <Button Content="{Binding ToggleActionText}" Command="{Binding DataContext.DeactivateFeeTypeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+            <TabItem Header="Người thuê">
+                <TabControl TabStripPlacement="Top">
+            <TabItem x:Name="TenantsTab" Header="Danh sách người thuê">
                 <DockPanel Margin="8">
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Quản lý phòng"/>
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Quản lý hồ sơ người thuê"/>
                     <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
                         <WrapPanel>
-                            <StackPanel><TextBlock Text="Nhà / khu trọ lọc"/><ComboBox ItemsSource="{Binding PropertyFilterOptions}" SelectedValue="{Binding RoomFilterPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
-                            <StackPanel><TextBlock Text="Trạng thái lọc"/><ComboBox ItemsSource="{Binding RoomStatusFilterOptions}" SelectedItem="{Binding RoomFilterStatus}" Width="140"/></StackPanel>
-                            <StackPanel><TextBlock Text="Tên phòng"/><TextBox Text="{Binding RoomSearch}" Width="130"/></StackPanel>
-                            <StackPanel><TextBlock Text="Người đại diện"/><TextBox Text="{Binding RoomRepresentativeSearch}" Width="140"/></StackPanel>
+                            <StackPanel><TextBlock Text="Tìm kiếm"/><TextBox Text="{Binding TenantSearch, UpdateSourceTrigger=PropertyChanged}" Width="180"/></StackPanel>
+                            <StackPanel><TextBlock Text="Trạng thái thuê"/><ComboBox ItemsSource="{Binding TenantStatusFilterOptions}" SelectedItem="{Binding TenantStatusFilter}" Width="150"/></StackPanel>
                             <Button Content="Xóa lọc" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
                     </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="{Binding RoomFormMode}">
+                    <GroupBox DockPanel.Dock="Top" Header="{Binding TenantFormMode}">
                         <WrapPanel>
-                            <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding NewRoom.PropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name"/></StackPanel>
-                            <StackPanel><TextBlock Text="Tên phòng"/><TextBox Text="{Binding NewRoom.RoomName, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
-                            <StackPanel><TextBlock Text="Tầng"/><TextBox Text="{Binding NewRoom.Floor, UpdateSourceTrigger=PropertyChanged}" Width="80"/></StackPanel>
-                            <StackPanel><TextBlock Text="Tiền phòng"/><TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoom.BaseRent, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
-                            <StackPanel><TextBlock Text="Trạng thái"/><ComboBox ItemsSource="{Binding RoomFormStatusOptions}" SelectedValue="{Binding NewRoom.Status}" SelectedValuePath="Value" DisplayMemberPath="Text"/></StackPanel>
-                            <Button Content="Thêm mới" Command="{Binding AddRoomCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Lưu thay đổi" Command="{Binding SaveRoomCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Hủy sửa" Command="{Binding CancelRoomEditCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Sửa dòng chọn" Command="{Binding EditRoomCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Trả phòng" Command="{Binding DeactivateRoomCommand}" VerticalAlignment="Bottom"/>
+                            <StackPanel><TextBlock Text="Họ tên"/><TextBox Text="{Binding NewTenant.FullName, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                            <StackPanel><TextBlock Text="Số điện thoại"/><TextBox Text="{Binding NewTenant.Phone, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                            <StackPanel><TextBlock Text="Email"/><TextBox Text="{Binding NewTenant.Email, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                            <StackPanel><TextBlock Text="CCCD/CMND"/><TextBox Text="{Binding NewTenant.IdentityNumber, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                            <Button Content="Thêm mới" Command="{Binding AddTenantCommand}" VerticalAlignment="Bottom"/>
+                            <Button Content="Lưu thay đổi" Command="{Binding SaveTenantCommand}" VerticalAlignment="Bottom"/>
+                            <Button Content="Hủy sửa" Command="{Binding CancelTenantEditCommand}" VerticalAlignment="Bottom"/>
+                            <Button Content="Sửa dòng chọn" Command="{Binding EditTenantCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
                     </GroupBox>
-                    <DataGrid ItemsSource="{Binding FilteredRooms}" SelectedItem="{Binding SelectedRoom}" SelectionMode="Single">
+                    <DataGrid ItemsSource="{Binding FilteredTenants}" SelectedItem="{Binding SelectedTenant}" SelectionMode="Single">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Nhà / khu trọ" Binding="{Binding PropertyName}" Width="170"/>
-                            <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="120"/>
-                            <DataGridTextColumn Header="Tầng" Binding="{Binding Floor}" Width="80"/>
-                            <DataGridTextColumn Header="Tiền phòng" Binding="{Binding BaseRent, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="120"/>
-                            <DataGridTextColumn Header="Người đại diện" Binding="{Binding RepresentativeTenantName}" Width="170"/>
-                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="130"/>
-                            <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="220"/>
+                            <DataGridTextColumn Header="Họ tên" Binding="{Binding FullName}" Width="180"/>
+                            <DataGridTextColumn Header="Điện thoại" Binding="{Binding Phone}" Width="130"/>
+                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180"/>
+                            <DataGridTextColumn Header="CCCD/CMND" Binding="{Binding IdentityNumber}" Width="140"/>
+                            <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="240"/>
                             <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button Content="Sửa" Command="{Binding DataContext.EditRoomRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                            <Button Content="Trả phòng" Command="{Binding DataContext.DeactivateRoomRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                        </StackPanel>
+                                        <Button Content="Sửa" Command="{Binding DataContext.EditTenantRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -178,8 +515,86 @@
                     </DataGrid>
                 </DockPanel>
             </TabItem>
-
-            <TabItem x:Name="MeterReadingsTab" Header="Chỉ số điện nước">
+            <TabItem x:Name="AssignmentsTab" Header="Phân phòng">
+                <DockPanel Margin="8">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Phân phòng — Gán người thuê vào phòng"/>
+                    <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
+                        <WrapPanel>
+                            <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding PropertyFilterOptions}" SelectedValue="{Binding AssignmentFilterPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
+                            <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding Rooms}" SelectedValue="{Binding AssignmentFilterRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="130"/></StackPanel>
+                            <StackPanel><TextBlock Text="Lịch sử"/><ComboBox ItemsSource="{Binding AssignmentHistoryFilterOptions}" SelectedItem="{Binding AssignmentHistoryFilter}" Width="140"/></StackPanel>
+                            <Button Content="Xóa lọc" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom"/>
+                        </WrapPanel>
+                    </GroupBox>
+                    <materialDesign:Card DockPanel.Dock="Top" Margin="8,0,8,8" materialDesign:ElevationAssist.Elevation="Dp2">
+                        <Expander IsExpanded="True" Background="{DynamicResource PrimaryHueLightBrush}" Foreground="{DynamicResource PrimaryHueLightForegroundBrush}">
+                            <Expander.Header>
+                                <TextBlock Text="Gán / Chuyển / Kết thúc thuê phòng" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="4,2"/>
+                            </Expander.Header>
+                            <DockPanel Background="{DynamicResource MaterialDesignPaper}" TextElement.Foreground="{DynamicResource MaterialDesignBody}">
+                            <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1" Padding="8,4">
+                                <WrapPanel>
+                                    <TextBlock Text="Gán người thuê mới:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding AssignmentNewPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding AssignmentRoomOptions}" SelectedValue="{Binding NewRoomTenant.RoomId}" SelectedValuePath="Id" DisplayMemberPath="DisplayNameWithProperty" Width="190"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Người thuê"/><ComboBox x:Name="AssignmentTenantComboBox" ItemsSource="{Binding AssignmentTenantOptions}" SelectedItem="{Binding SelectedAssignmentTenant, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="AssignmentDisplayText" TextSearch.TextPath="AssignmentDisplayText" IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True" Width="230" Loaded="AssignmentTenantComboBox_Loaded" GotKeyboardFocus="AssignmentTenantComboBox_GotKeyboardFocus" PreviewMouseDown="AssignmentTenantComboBox_PreviewMouseDown" SelectionChanged="AssignmentTenantComboBox_SelectionChanged"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Ngày bắt đầu"/><DatePicker SelectedDate="{Binding NewRoomTenant.StartDate}" Width="130"/></StackPanel>
+                                    <CheckBox Content="Đặt làm người đại diện / liên hệ chính" IsChecked="{Binding NewRoomTenant.IsRepresentative}" VerticalAlignment="Bottom" Margin="8"/>
+                                    <Button Content="Gán vào phòng" Command="{Binding AssignTenantCommand}" VerticalAlignment="Bottom"/>
+                                </WrapPanel>
+                            </Border>
+                            <DockPanel Margin="8">
+                                <TextBlock Text="Ngày kết thúc (Dùng cho Chuyển / Kết thúc thuê):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                <DatePicker SelectedDate="{Binding AssignmentEndDate}" Width="130" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            </DockPanel>
+                        </Expander>
+                    </materialDesign:Card>
+                    
+                    <TabControl Margin="4">
+                        <TabItem Header="✓ Đang thuê">
+                            <DataGrid ItemsSource="{Binding ActiveRoomTenants}" SelectionMode="Single" Margin="0,8,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Nhà / khu trọ" Binding="{Binding PropertyName}" Width="150"/>
+                                    <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="110"/>
+                                    <DataGridTextColumn Header="Người thuê" Binding="{Binding TenantName}" Width="170"/>
+                                    <DataGridTextColumn Header="Vai trò / Đại diện" Binding="{Binding RepresentativeText}" Width="140"/>
+                                    <DataGridTextColumn Header="Ngày bắt đầu" Binding="{Binding StartDate, StringFormat=d}" Width="110"/>
+                                    <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Content="Đặt làm đại diện / liên hệ chính" Style="{StaticResource MaterialDesignOutlinedButton}" Command="{Binding DataContext.SetRepresentativeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Height="28" Padding="8,0" Margin="2,0"/>
+                                                    <Button Content="Kết thúc thuê" Style="{StaticResource MaterialDesignOutlinedButton}" Command="{Binding DataContext.EndAssignmentRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Height="28" Padding="8,0" Margin="2,0"/>
+                                                    <Button Content="Chuyển phòng" Style="{StaticResource MaterialDesignOutlinedButton}" Command="{Binding DataContext.ChangeRoomRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Height="28" Padding="8,0" Margin="2,0"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                        <TabItem Header="Lịch sử thuê (đã kết thúc)">
+                            <DataGrid ItemsSource="{Binding FilteredAssignmentHistory}" SelectionMode="Single" Margin="0,8,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Nhà / khu trọ" Binding="{Binding PropertyName}" Width="150"/>
+                                    <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="110"/>
+                                    <DataGridTextColumn Header="Người thuê" Binding="{Binding TenantName}" Width="170"/>
+                                    <DataGridTextColumn Header="Vai trò" Binding="{Binding RepresentativeText}" Width="110"/>
+                                    <DataGridTextColumn Header="Ngày bắt đầu" Binding="{Binding StartDate, StringFormat=d}" Width="110"/>
+                                    <DataGridTextColumn Header="Ngày kết thúc" Binding="{Binding EndDate, StringFormat=d}" Width="110"/>
+                                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="110"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                    </TabControl>
+                </DockPanel>
+            </TabItem>
+                </TabControl>
+            </TabItem>
+            <TabItem Header="Thu tiền tháng này">
+                <TabControl TabStripPlacement="Top">
+            <TabItem x:Name="MeterReadingsTab" Header="Chỉ số điện / nước">
                 <DockPanel Margin="8">
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Nhập chỉ số điện nước"/>
                     <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
@@ -187,8 +602,8 @@
                             <StackPanel><TextBlock Text="Tháng"/><ComboBox ItemsSource="{Binding MonthOptions}" SelectedItem="{Binding MeterFilterMonth}" Width="80"/></StackPanel>
                             <StackPanel><TextBlock Text="Năm"/><ComboBox ItemsSource="{Binding YearOptions}" SelectedItem="{Binding MeterFilterYear}" Width="90"/></StackPanel>
                             <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding PropertyFilterOptions}" SelectedValue="{Binding MeterFilterPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
-                            <StackPanel><TextBlock Text="Phòng lọc"/><ComboBox ItemsSource="{Binding Rooms}" SelectedValue="{Binding MeterFilterRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="120"/></StackPanel>
-                            <StackPanel><TextBlock Text="Loại phí lọc"/><ComboBox ItemsSource="{Binding FeeTypes}" SelectedValue="{Binding MeterFilterFeeTypeId}" SelectedValuePath="Id" DisplayMemberPath="DisplayName" Width="120"/></StackPanel>
+                            <StackPanel><TextBlock Text="Phòng lọc"/><ComboBox ItemsSource="{Binding MeterFilterRoomOptions}" SelectedValue="{Binding MeterFilterRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="140"/></StackPanel>
+                            <StackPanel><TextBlock Text="Khoản thu"/><ComboBox ItemsSource="{Binding FeeTypes}" SelectedValue="{Binding MeterFilterFeeTypeId}" SelectedValuePath="Id" DisplayMemberPath="DisplayName" Width="120"/></StackPanel>
                             <Button Content="Xóa lọc" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
                     </GroupBox>
@@ -197,7 +612,7 @@
                         <WrapPanel>
                             <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding NewMeterReadingPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
                             <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding MeterReadingRoomOptions}" SelectedValue="{Binding NewMeterReadingRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="130"/></StackPanel>
-                            <StackPanel><TextBlock Text="Loại phí theo chỉ số"/><ComboBox ItemsSource="{Binding MeterReadingFeeTypeOptions}" SelectedValue="{Binding NewMeterReadingFeeTypeId}" SelectedValuePath="Id" DisplayMemberPath="DisplayName" Width="150"/></StackPanel>
+                            <StackPanel><TextBlock Text="Khoản thu theo chỉ số"/><ComboBox ItemsSource="{Binding MeterReadingFeeTypeOptions}" SelectedValue="{Binding NewMeterReadingFeeTypeId}" SelectedValuePath="Id" DisplayMemberPath="DisplayName" Width="160"/></StackPanel>
                             <StackPanel><TextBlock Text="Chỉ số cũ"/><TextBox Text="{Binding NewMeterReading.PreviousReading, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
                             <StackPanel><TextBlock Text="Chỉ số mới"/><TextBox Text="{Binding NewMeterReading.CurrentReading, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
                             <StackPanel><TextBlock Text="Ghi chú"/><TextBox Text="{Binding NewMeterReading.Note, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
@@ -211,7 +626,7 @@
                             <DataGridTextColumn Header="Tháng" Binding="{Binding BillingMonth}" Width="90"/>
                             <DataGridTextColumn Header="Nhà / khu trọ" Binding="{Binding PropertyName}" Width="150"/>
                             <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="100"/>
-                            <DataGridTextColumn Header="Loại phí" Binding="{Binding FeeTypeName}" Width="130"/>
+                            <DataGridTextColumn Header="Khoản thu" Binding="{Binding FeeTypeName}" Width="130"/>
                             <DataGridTextColumn Header="Chỉ số cũ" Binding="{Binding PreviousReading, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="100"/>
                             <DataGridTextColumn Header="Chỉ số mới" Binding="{Binding CurrentReading, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="100"/>
                             <DataGridTextColumn Header="Sử dụng" Binding="{Binding UsageAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="100"/>
@@ -221,7 +636,6 @@
                     </DataGrid>
                 </DockPanel>
             </TabItem>
-
             <TabItem x:Name="InvoicesTab" Header="Hóa đơn">
                 <DockPanel Margin="8">
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tạo và theo dõi hóa đơn"/>
@@ -277,7 +691,7 @@
                                     <DataGridTextColumn Header="Tháng" Binding="{Binding BillingMonth}" Width="80"/>
                                     <DataGridTextColumn Header="Nhà / khu trọ" Binding="{Binding PropertyName}" Width="150"/>
                                     <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="100"/>
-                                    <DataGridTextColumn Header="Người đại diện" Binding="{Binding RepresentativeTenantName}" Width="150"/>
+                                    <DataGridTextColumn Header="Người đại diện" Binding="{Binding RepresentativeTenantName}" Width="160"/>
                                     <DataGridTextColumn Header="Tổng tiền" Binding="{Binding TotalAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="115"/>
                                     <DataGridTextColumn Header="Đã thu" Binding="{Binding PaidAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
                                     <DataGridTextColumn Header="Còn lại" Binding="{Binding RemainingAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
@@ -334,8 +748,7 @@
                     </Grid>
                 </DockPanel>
             </TabItem>
-
-            <TabItem x:Name="PaymentsTab" Header="Thanh toán">
+            <TabItem x:Name="PaymentsTab" Header="Lịch sử thanh toán">
                 <DockPanel Margin="8">
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Lịch sử thanh toán"/>
                     <GroupBox DockPanel.Dock="Top" Header="Tìm kiếm">
@@ -362,253 +775,19 @@
                     </DataGrid>
                 </DockPanel>
             </TabItem>
-
-            <TabItem x:Name="TenantsTab" Header="Người thuê">
-                <DockPanel Margin="8">
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Quản lý hồ sơ người thuê"/>
-                    <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Tìm kiếm"/><TextBox Text="{Binding TenantSearch, UpdateSourceTrigger=PropertyChanged}" Width="180"/></StackPanel>
-                            <StackPanel><TextBlock Text="Trạng thái thuê"/><ComboBox ItemsSource="{Binding TenantStatusFilterOptions}" SelectedItem="{Binding TenantStatusFilter}" Width="150"/></StackPanel>
-                            <Button Content="Xóa lọc" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="{Binding TenantFormMode}">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Họ tên"/><TextBox Text="{Binding NewTenant.FullName, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
-                            <StackPanel><TextBlock Text="Số điện thoại"/><TextBox Text="{Binding NewTenant.Phone, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
-                            <StackPanel><TextBlock Text="Email"/><TextBox Text="{Binding NewTenant.Email, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
-                            <StackPanel><TextBlock Text="CCCD/CMND"/><TextBox Text="{Binding NewTenant.IdentityNumber, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
-                            <Button Content="Thêm mới" Command="{Binding AddTenantCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Lưu thay đổi" Command="{Binding SaveTenantCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Hủy sửa" Command="{Binding CancelTenantEditCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Sửa dòng chọn" Command="{Binding EditTenantCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <DataGrid ItemsSource="{Binding FilteredTenants}" SelectedItem="{Binding SelectedTenant}" SelectionMode="Single">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Họ tên" Binding="{Binding FullName}" Width="180"/>
-                            <DataGridTextColumn Header="Điện thoại" Binding="{Binding Phone}" Width="130"/>
-                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180"/>
-                            <DataGridTextColumn Header="CCCD/CMND" Binding="{Binding IdentityNumber}" Width="140"/>
-                            <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="240"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="Sửa" Command="{Binding DataContext.EditTenantRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
+                </TabControl>
             </TabItem>
-
-            <TabItem x:Name="AssignmentsTab" Header="Thuê phòng / Phân phòng">
-                <DockPanel Margin="8">
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Thuê phòng / Phân phòng"/>
-                    <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding PropertyFilterOptions}" SelectedValue="{Binding AssignmentFilterPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
-                            <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding Rooms}" SelectedValue="{Binding AssignmentFilterRoomId}" SelectedValuePath="Id" DisplayMemberPath="RoomName" Width="130"/></StackPanel>
-                            <StackPanel><TextBlock Text="Lịch sử"/><ComboBox ItemsSource="{Binding AssignmentHistoryFilterOptions}" SelectedItem="{Binding AssignmentHistoryFilter}" Width="140"/></StackPanel>
-                            <Button Content="Xóa lọc" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <materialDesign:Card DockPanel.Dock="Top" Margin="8,0,8,8" materialDesign:ElevationAssist.Elevation="Dp2">
-                        <Expander IsExpanded="False" Background="{DynamicResource PrimaryHueLightBrush}" Foreground="{DynamicResource PrimaryHueLightForegroundBrush}">
-                            <Expander.Header>
-                                <TextBlock Text="CÔNG CỤ (GÁN / CHUYỂN / KẾT THÚC THUÊ)" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="4,2"/>
-                            </Expander.Header>
-                            <DockPanel Background="{DynamicResource MaterialDesignPaper}" TextElement.Foreground="{DynamicResource MaterialDesignBody}">
-                            <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1" Padding="8,4">
-                                <WrapPanel>
-                                    <TextBlock Text="Gán người thuê mới:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,16,0"/>
-                                    <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding AssignmentNewPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
-                                    <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding AssignmentRoomOptions}" SelectedValue="{Binding NewRoomTenant.RoomId}" SelectedValuePath="Id" DisplayMemberPath="DisplayNameWithProperty" Width="190"/></StackPanel>
-                                    <StackPanel><TextBlock Text="Người thuê"/><ComboBox x:Name="AssignmentTenantComboBox" ItemsSource="{Binding AssignmentTenantOptions}" SelectedItem="{Binding SelectedAssignmentTenant, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="AssignmentDisplayText" TextSearch.TextPath="AssignmentDisplayText" IsEditable="True" IsTextSearchEnabled="False" StaysOpenOnEdit="True" Width="230" Loaded="AssignmentTenantComboBox_Loaded" GotKeyboardFocus="AssignmentTenantComboBox_GotKeyboardFocus" PreviewMouseDown="AssignmentTenantComboBox_PreviewMouseDown" SelectionChanged="AssignmentTenantComboBox_SelectionChanged"/></StackPanel>
-                                    <StackPanel><TextBlock Text="Ngày bắt đầu"/><DatePicker SelectedDate="{Binding NewRoomTenant.StartDate}" Width="130"/></StackPanel>
-                                    <CheckBox Content="Người đại diện" IsChecked="{Binding NewRoomTenant.IsRepresentative}" VerticalAlignment="Bottom" Margin="8"/>
-                                    <Button Content="Gán vào phòng" Command="{Binding AssignTenantCommand}" VerticalAlignment="Bottom"/>
-                                </WrapPanel>
-                            </Border>
-                            <DockPanel Margin="8">
-                                <TextBlock Text="Ngày kết thúc (Dùng cho Chuyển / Kết thúc thuê):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,16,0"/>
-                                <DatePicker SelectedDate="{Binding AssignmentEndDate}" Width="130" VerticalAlignment="Center"/>
-                            </DockPanel>
-                            </DockPanel>
-                        </Expander>
-                    </materialDesign:Card>
-                    
-                    <TabControl Margin="4">
-                        <TabItem Header="Đang thuê">
-                            <DataGrid ItemsSource="{Binding ActiveRoomTenants}" SelectionMode="Single" Margin="0,8,0,0">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Nhà / khu trọ" Binding="{Binding PropertyName}" Width="150"/>
-                                    <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="110"/>
-                                    <DataGridTextColumn Header="Người thuê" Binding="{Binding TenantName}" Width="170"/>
-                                    <DataGridTextColumn Header="Vai trò" Binding="{Binding RepresentativeText}" Width="110"/>
-                                    <DataGridTextColumn Header="Ngày bắt đầu" Binding="{Binding StartDate, StringFormat=d}" Width="110"/>
-                                    <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Button Content="Đặt đại diện" Style="{StaticResource MaterialDesignOutlinedButton}" Command="{Binding DataContext.SetRepresentativeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Height="28" Padding="8,0" Margin="2,0"/>
-                                                    <Button Content="Kết thúc thuê" Style="{StaticResource MaterialDesignOutlinedButton}" Command="{Binding DataContext.EndAssignmentRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Height="28" Padding="8,0" Margin="2,0"/>
-                                                    <Button Content="Chuyển phòng" Style="{StaticResource MaterialDesignOutlinedButton}" Command="{Binding DataContext.ChangeRoomRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Height="28" Padding="8,0" Margin="2,0"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </TabItem>
-                        <TabItem Header="Lịch sử thuê">
-                            <DataGrid ItemsSource="{Binding FilteredAssignmentHistory}" SelectionMode="Single" Margin="0,8,0,0">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Nhà / khu trọ" Binding="{Binding PropertyName}" Width="150"/>
-                                    <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="110"/>
-                                    <DataGridTextColumn Header="Người thuê" Binding="{Binding TenantName}" Width="170"/>
-                                    <DataGridTextColumn Header="Vai trò" Binding="{Binding RepresentativeText}" Width="110"/>
-                                    <DataGridTextColumn Header="Ngày bắt đầu" Binding="{Binding StartDate, StringFormat=d}" Width="110"/>
-                                    <DataGridTextColumn Header="Ngày kết thúc" Binding="{Binding EndDate, StringFormat=d}" Width="110"/>
-                                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="110"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </TabItem>
-                    </TabControl>
-                </DockPanel>
+            <TabItem Header="Cài đặt">
+                <TabControl TabStripPlacement="Top">
+                        <TabItem x:Name="FeeTypesTab" Header="Danh mục khoản phí" IsEnabled="False">
+                <!-- Moved: see Nhà &amp; Phòng → Danh mục khoản phí -->
+                <StackPanel Margin="32" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <materialDesign:PackIcon Kind="ArrowLeft" Width="40" Height="40" HorizontalAlignment="Center" Opacity="0.4"/>
+                    <TextBlock Text="Danh mục khoản phí đã được chuyển sang tab Nhà &amp; Phòng." FontSize="15" HorizontalAlignment="Center" Margin="0,12,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Chuyển sang tab Nhà &amp; Phòng → Danh mục khoản phí để quản lý." FontSize="13" Opacity="0.6" HorizontalAlignment="Center" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
             </TabItem>
-
-            <TabItem x:Name="RoomFeesTab" Header="Phí theo phòng">
-                <DockPanel Margin="8">
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Phí theo phòng"/>
-                    <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Tìm kiếm"/><TextBox Text="{Binding RoomFeeSearch, UpdateSourceTrigger=PropertyChanged}" Width="160"/></StackPanel>
-                            <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding RoomFeePropertyFilterId}" SelectedValuePath="Id" DisplayMemberPath="Name"/></StackPanel>
-                            <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding RoomFeeFilterRoomOptions}" SelectedValue="{Binding RoomFeeRoomFilterId}" SelectedValuePath="Id" DisplayMemberPath="DisplayNameWithProperty" Width="190"/></StackPanel>
-                            <StackPanel><TextBlock Text="Loại phí"/><ComboBox ItemsSource="{Binding FeeTypes}" SelectedValue="{Binding RoomFeeFeeTypeFilterId}" SelectedValuePath="Id" DisplayMemberPath="DisplayName"/></StackPanel>
-                            <StackPanel><TextBlock Text="Trạng thái áp dụng"/><ComboBox ItemsSource="{Binding RoomFeeStatusFilterOptions}" SelectedItem="{Binding RoomFeeStatusFilter}" Width="140"/></StackPanel>
-                            <Button Content="Xóa lọc" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <GroupBox DockPanel.Dock="Top" Header="{Binding RoomFeeFormMode}">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding NewRoomFeePropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="170"/></StackPanel>
-                            <StackPanel><TextBlock Text="Phòng"/><ComboBox ItemsSource="{Binding RoomFeeFormRoomOptions}" SelectedValue="{Binding NewRoomFeeConfig.RoomId}" SelectedValuePath="Id" DisplayMemberPath="DisplayNameWithProperty" Width="190"/></StackPanel>
-                            <StackPanel><TextBlock Text="Loại phí"/><ComboBox ItemsSource="{Binding FeeTypes}" SelectedValue="{Binding NewRoomFeeFeeTypeId}" SelectedValuePath="Id" DisplayMemberPath="DisplayName"/></StackPanel>
-                            <StackPanel><TextBlock Text="Cách tính"/><ComboBox ItemsSource="{Binding CalculationTypeOptions}" SelectedValue="{Binding NewRoomFeeCalculationType}" SelectedValuePath="Value" DisplayMemberPath="Text"/></StackPanel>
-                            <CheckBox Content="Dùng giá mặc định" IsChecked="{Binding NewRoomFeeUseDefaultPrice}" IsEnabled="{Binding RoomFeeDefaultPriceInputEnabled}" Visibility="{Binding RoomFeeDefaultPriceVisibility}" VerticalAlignment="Bottom" Margin="8"/>
-                            <StackPanel Visibility="{Binding RoomFeeUnitPriceVisibility}"><TextBlock Text="Đơn giá"/><TextBox IsEnabled="{Binding RoomFeeCustomPriceInputEnabled}" helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoomFeeConfig.UnitPrice, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
-                            <StackPanel Visibility="{Binding RoomFeeFixedAmountVisibility}"><TextBlock Text="Cố định"/><TextBox IsEnabled="{Binding RoomFeeCustomPriceInputEnabled}" helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoomFeeConfig.FixedAmount, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
-                            <StackPanel Visibility="{Binding RoomFeeQuantityVisibility}"><TextBlock Text="Số lượng"/><TextBox Text="{Binding NewRoomFeeConfig.Quantity, UpdateSourceTrigger=PropertyChanged}" Width="90"/></StackPanel>
-                            <CheckBox Content="Đang áp dụng" IsChecked="{Binding NewRoomFeeConfig.Enabled}" VerticalAlignment="Bottom" Margin="8"/>
-                            <Button Content="Thêm mới" Command="{Binding AddRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Sửa dòng chọn" Command="{Binding EditRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Lưu thay đổi" Command="{Binding SaveRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Hủy sửa" Command="{Binding CancelRoomFeeConfigEditCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="{Binding SelectedRoomFeeToggleActionText}" Command="{Binding DisableRoomFeeConfigCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <DataGrid ItemsSource="{Binding FilteredRoomFeeConfigs}" SelectedItem="{Binding SelectedRoomFeeConfig}" SelectionMode="Single">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Phòng" Binding="{Binding RoomDisplayNameWithProperty}" Width="190"/>
-                            <DataGridTextColumn Header="Loại phí" Binding="{Binding FeeTypeName}" Width="120"/>
-                            <DataGridTextColumn Header="Cách tính" Binding="{Binding CalculationTypeText}" Width="105"/>
-                            <DataGridTextColumn Header="Giá áp dụng" Binding="{Binding AppliedPriceText}" Width="125"/>
-                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding EnabledText}" Width="110"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button Content="Sửa" Command="{Binding DataContext.EditRoomFeeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                            <Button Content="{Binding ToggleActionText}" Command="{Binding DataContext.DisableRoomFeeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </TabItem>
-
-            <TabItem x:Name="FeeTypesTab" Header="Loại phí">
-                <DockPanel Margin="8">
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Loại phí"/>
-                    <GroupBox DockPanel.Dock="Top" Header="{Binding FeeTypeFormMode}">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Tên loại phí"/><TextBox Text="{Binding NewFeeType.Name, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
-                            <StackPanel><TextBlock Text="Cách tính"/><ComboBox ItemsSource="{Binding CalculationTypeOptions}" SelectedValue="{Binding NewFeeType.DefaultCalculationType}" SelectedValuePath="Value" DisplayMemberPath="Text"/></StackPanel>
-                            <StackPanel><TextBlock Text="Đơn vị"/><TextBox Text="{Binding NewFeeType.DefaultUnit, UpdateSourceTrigger=PropertyChanged}" Width="100"/></StackPanel>
-                            <StackPanel><TextBlock Text="Đơn giá mặc định"/><TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewFeeType.DefaultUnitPrice, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
-                            <Button Content="Thêm mới" Command="{Binding AddFeeTypeCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Sửa dòng chọn" Command="{Binding EditFeeTypeCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Lưu thay đổi" Command="{Binding SaveFeeTypeCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Hủy sửa" Command="{Binding CancelFeeTypeEditCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="{Binding SelectedFeeTypeToggleActionText}" Command="{Binding DeactivateFeeTypeCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <DataGrid ItemsSource="{Binding FeeTypes}" SelectedItem="{Binding SelectedFeeType}" SelectionMode="Single">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Tên phí" Binding="{Binding DisplayName}" Width="160"/>
-                            <DataGridTextColumn Header="Cách tính" Binding="{Binding CalculationTypeText}" Width="130"/>
-                            <DataGridTextColumn Header="Đơn vị" Binding="{Binding DefaultUnit}" Width="100"/>
-                            <DataGridTextColumn Header="Đơn giá" Binding="{Binding DefaultUnitPrice, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="120"/>
-                            <DataGridTextColumn Header="Loại hệ thống" Binding="{Binding SystemStatusText}" Width="110"/>
-                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding ActiveStatusText}" Width="110"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button Content="Sửa" Command="{Binding DataContext.EditFeeTypeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                            <Button Content="{Binding ToggleActionText}" Command="{Binding DataContext.DeactivateFeeTypeRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </TabItem>
-
-            <TabItem x:Name="PropertiesTab" Header="Nhà / Khu trọ">
-                <DockPanel Margin="8">
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Nhà / khu trọ"/>
-                    <GroupBox DockPanel.Dock="Top" Header="{Binding PropertyFormMode}">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Tên nhà / khu trọ"/><TextBox Text="{Binding NewProperty.Name, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
-                            <StackPanel><TextBlock Text="Địa chỉ"/><TextBox Text="{Binding NewProperty.Address, UpdateSourceTrigger=PropertyChanged}" MinWidth="240"/></StackPanel>
-                            <StackPanel><TextBlock Text="Ghi chú"/><TextBox Text="{Binding NewProperty.Note, UpdateSourceTrigger=PropertyChanged}" MinWidth="240"/></StackPanel>
-                            <Button Content="Thêm mới" Command="{Binding AddPropertyCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Lưu thay đổi" Command="{Binding SavePropertyCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Hủy sửa" Command="{Binding CancelPropertyEditCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Sửa dòng chọn" Command="{Binding EditPropertyCommand}" VerticalAlignment="Bottom"/>
-                            <Button Content="Ngừng sử dụng" Command="{Binding DeactivatePropertyCommand}" VerticalAlignment="Bottom"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <DataGrid ItemsSource="{Binding Properties}" SelectedItem="{Binding SelectedProperty}" SelectionMode="Single">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Tên nhà / khu trọ" Binding="{Binding Name}" Width="200"/>
-                            <DataGridTextColumn Header="Địa chỉ" Binding="{Binding Address}" Width="260"/>
-                            <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="220"/>
-                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding ActiveStatusText}" Width="130"/>
-                            <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button Content="Sửa" Command="{Binding DataContext.EditPropertyRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                            <Button Content="Ngừng" Command="{Binding DataContext.DeactivatePropertyRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </TabItem>
-
-            <TabItem x:Name="SettingsTab" Header="Cài đặt">
+            <TabItem x:Name="SettingsTab" Header="Dữ liệu &amp; Sao lưu">
                 <StackPanel Margin="16">
                     <TextBlock Text="Vị trí file dữ liệu" FontWeight="SemiBold"/>
                     <TextBox Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" MinWidth="720"/>
@@ -617,7 +796,7 @@
                     <Button Content="Tạo dữ liệu mẫu" Width="280" HorizontalAlignment="Left" Command="{Binding SeedDemoDataCommand}"/>
                 </StackPanel>
             </TabItem>
-            <TabItem x:Name="AutomationTab" Header="AI &amp; Automation">
+            <TabItem x:Name="AutomationTab" Header="AI &amp; Tự động hóa">
                 <DockPanel Margin="16">
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tích hợp AI &amp; Automation"/>
                     
@@ -666,6 +845,8 @@
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
+            </TabItem>
+                </TabControl>
             </TabItem>
         </TabControl>
     </DockPanel>

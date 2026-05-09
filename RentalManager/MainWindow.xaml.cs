@@ -15,34 +15,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        ApplyWorkflowTabOrder();
         DataContext = new MainViewModel();
     }
 
-    private void ApplyWorkflowTabOrder()
-    {
-        var orderedTabs = new[]
-        {
-            DashboardTab,
-            PropertiesTab,
-            RoomsTab,
-            TenantsTab,
-            AssignmentsTab,
-            FeeTypesTab,
-            RoomFeesTab,
-            MeterReadingsTab,
-            InvoicesTab,
-            PaymentsTab,
-            SettingsTab,
-            AutomationTab
-        };
-
-        MainTabs.Items.Clear();
-        foreach (var tab in orderedTabs)
-        {
-            MainTabs.Items.Add(tab);
-        }
-    }
 
     private void AssignmentTenantComboBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {

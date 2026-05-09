@@ -85,6 +85,17 @@ public class MainViewModel : ViewModelBase
     private Tenant? _selectedAssignmentTenant;
     private bool _isUpdatingAssignmentTenantText;
     private DateTime _assignmentEndDate = DateTime.Today;
+    // Bulk room creation
+    private int _bulkRoomPropertyId;
+    private string _bulkRoomPrefix = "Phòng ";
+    private int _bulkRoomStart = 101;
+    private int _bulkRoomEnd = 110;
+    private decimal _bulkRoomBaseRent;
+    // Drawer state
+    private bool _isPropertyDrawerOpen;
+    private bool _isRoomDrawerOpen;
+    private bool _isBulkRoomDrawerOpen;
+    private bool _isRoomFeeDrawerOpen;
 
     public MainViewModel()
     {
@@ -127,6 +138,14 @@ public class MainViewModel : ViewModelBase
         OpenDocsCommand = new RelayCommand(OpenDocs);
         ApplyFiltersCommand = new RelayCommand(RefreshAllFilters);
         ClearFiltersCommand = new RelayCommand(ClearFilters);
+        AddRoomsRangeCommand = new RelayCommand(() => Run(AddRoomsRange));
+        OpenAddPropertyDrawerCommand = new RelayCommand(() => { CancelPropertyEdit(); IsPropertyDrawerOpen = true; });
+        OpenAddRoomDrawerCommand    = new RelayCommand(() => { CancelRoomEdit();     IsRoomDrawerOpen     = true; });
+        OpenBulkRoomDrawerCommand   = new RelayCommand(() => { IsBulkRoomDrawerOpen  = true; });
+        CloseDrawerCommand          = new RelayCommand(CloseAllDrawers);
+        OpenEditPropertyDrawerCommand = new RelayCommand<Property>(p => Run(() => { SelectedProperty = p; EditProperty(); IsPropertyDrawerOpen = true; }));
+        OpenEditRoomDrawerCommand     = new RelayCommand<Room>(r => Run(() => { SelectedRoom = r; EditRoom(); IsRoomDrawerOpen = true; }));
+        OpenRoomFeeDrawerCommand      = new RelayCommand<Room>(r => { SelectedRoom = r; NewRoomFeePropertyId = r?.PropertyId ?? 0; NewRoomFeeConfig.RoomId = r?.Id ?? 0; OnPropertyChanged(nameof(NewRoomFeeConfig)); IsRoomFeeDrawerOpen = true; });
         CancelPropertyEditCommand = new RelayCommand(CancelPropertyEdit, () => NewProperty.Id > 0);
         CancelRoomEditCommand = new RelayCommand(CancelRoomEdit, () => NewRoom.Id > 0);
         CancelTenantEditCommand = new RelayCommand(CancelTenantEdit, () => NewTenant.Id > 0);
@@ -168,6 +187,9 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<RoomFeeConfig> FilteredRoomFeeConfigs { get; } = new();
     public ObservableCollection<Room> RoomFeeFilterRoomOptions { get; } = new();
     public ObservableCollection<Room> RoomFeeFormRoomOptions { get; } = new();
+    public ObservableCollection<Room> MeterFilterRoomOptions { get; } = new();
+    public ObservableCollection<Room> WorkspaceRooms { get; } = new();
+    public ObservableCollection<RoomFeeConfig> WorkspaceRoomFees { get; } = new();
     public ObservableCollection<MeterReading> MeterReadings { get; } = new();
     public ObservableCollection<MeterReading> FilteredMeterReadings { get; } = new();
     public ObservableCollection<Invoice> Invoices { get; } = new();
@@ -237,6 +259,8 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedProperty, value))
             {
+                RefreshWorkspaceRooms();
+                OnPropertyChanged(nameof(WorkspacePropertyHeader));
                 RaiseCommandStates();
             }
         }
@@ -249,6 +273,8 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedRoom, value))
             {
+                RefreshWorkspaceRoomFees();
+                OnPropertyChanged(nameof(WorkspaceRoomHeader));
                 RaiseCommandStates();
             }
         }
@@ -614,7 +640,7 @@ public class MainViewModel : ViewModelBase
 
     public int MeterFilterMonth { get => _meterFilterMonth; set { if (SetProperty(ref _meterFilterMonth, value)) { RefreshMeterReadingFilters(); LoadMeterReadingFormForSelection(); } } }
     public int MeterFilterYear { get => _meterFilterYear; set { if (SetProperty(ref _meterFilterYear, value)) { RefreshMeterReadingFilters(); LoadMeterReadingFormForSelection(); } } }
-    public int MeterFilterPropertyId { get => _meterFilterPropertyId; set { if (SetProperty(ref _meterFilterPropertyId, value)) RefreshMeterReadingFilters(); } }
+    public int MeterFilterPropertyId { get => _meterFilterPropertyId; set { if (SetProperty(ref _meterFilterPropertyId, value)) { RefreshMeterFilterRoomOptions(); RefreshMeterReadingFilters(); } } }
     public int MeterFilterRoomId { get => _meterFilterRoomId; set { if (SetProperty(ref _meterFilterRoomId, value)) RefreshMeterReadingFilters(); } }
     public int MeterFilterFeeTypeId { get => _meterFilterFeeTypeId; set { if (SetProperty(ref _meterFilterFeeTypeId, value)) RefreshMeterReadingFilters(); } }
 
@@ -845,8 +871,14 @@ public class MainViewModel : ViewModelBase
     public string TenantFormMode => NewTenant.Id > 0 ? $"Đang sửa: {NewTenant.FullName}" : "Đang thêm mới";
     public string FeeTypeFormMode => NewFeeType.Id > 0 ? $"Đang sửa: {NewFeeType.DisplayName}" : "Đang thêm mới";
     public string SelectedFeeTypeToggleActionText => SelectedFeeType?.ToggleActionText ?? "Ngừng";
-    public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? $"Đang sửa: {RoomFeeEditTitle}" : "Đang thêm mới";
+    public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? $"Đang sửa: {RoomFeeEditTitle}" : "Thêm khoản thu cho phòng";
     public string SelectedRoomFeeToggleActionText => SelectedRoomFeeConfig?.ToggleActionText ?? "Ngừng";
+    public string WorkspacePropertyHeader => SelectedProperty is null
+        ? "Chọn nhà / khu trọ bên trái"
+        : $"{SelectedProperty.Name} — {WorkspaceRooms.Count} phòng";
+    public string WorkspaceRoomHeader => SelectedRoom is null
+        ? "Chọn phòng để xem khoản phí"
+        : $"Khoản phí — {SelectedRoom.RoomName}";
     private string RoomFeeEditTitle
     {
         get
@@ -899,6 +931,21 @@ public class MainViewModel : ViewModelBase
     public RelayCommand SeedDemoDataCommand { get; }
     public RelayCommand ApplyFiltersCommand { get; }
     public RelayCommand ClearFiltersCommand { get; }
+    public RelayCommand AddRoomsRangeCommand { get; }
+    // Drawer commands
+    public RelayCommand OpenAddPropertyDrawerCommand  { get; }
+    public RelayCommand OpenAddRoomDrawerCommand      { get; }
+    public RelayCommand OpenBulkRoomDrawerCommand     { get; }
+    public RelayCommand CloseDrawerCommand            { get; }
+    public RelayCommand<Property> OpenEditPropertyDrawerCommand { get; }
+    public RelayCommand<Room>     OpenEditRoomDrawerCommand     { get; }
+    public RelayCommand<Room>     OpenRoomFeeDrawerCommand      { get; }
+    // Drawer state properties
+    public bool IsPropertyDrawerOpen  { get => _isPropertyDrawerOpen;  set { if (SetProperty(ref _isPropertyDrawerOpen,  value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsRoomDrawerOpen      { get => _isRoomDrawerOpen;      set { if (SetProperty(ref _isRoomDrawerOpen,      value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsBulkRoomDrawerOpen  { get => _isBulkRoomDrawerOpen;  set { if (SetProperty(ref _isBulkRoomDrawerOpen,  value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsRoomFeeDrawerOpen   { get => _isRoomFeeDrawerOpen;   set { if (SetProperty(ref _isRoomFeeDrawerOpen,   value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen;
     public RelayCommand CancelPropertyEditCommand { get; }
     public RelayCommand CancelRoomEditCommand { get; }
     public RelayCommand CancelTenantEditCommand { get; }
@@ -929,6 +976,8 @@ public class MainViewModel : ViewModelBase
         RefreshRoomFeeFilterRoomOptions();
         RefreshRoomFeeFormRoomOptions();
         RefreshMeterReadingRoomOptions();
+        RefreshMeterFilterRoomOptions();
+        RefreshWorkspaceRooms();
         RefreshInvoiceFilterRoomOptions();
         RefreshInvoiceFormRoomOptions();
         RefreshAssignmentRoomOptions();
@@ -966,6 +1015,7 @@ public class MainViewModel : ViewModelBase
         _propertyService.Save(NewProperty);
         NewProperty = new Property();
         NotifyFormModes();
+        CloseAllDrawers();
         Load();
     }
 
@@ -975,6 +1025,7 @@ public class MainViewModel : ViewModelBase
         _propertyService.Save(NewProperty);
         NewProperty = new Property();
         NotifyFormModes();
+        CloseAllDrawers();
         Load();
     }
 
@@ -1017,6 +1068,7 @@ public class MainViewModel : ViewModelBase
         _roomService.Save(NewRoom);
         NewRoom = new Room();
         NotifyFormModes();
+        CloseAllDrawers();
         Load();
     }
 
@@ -1026,6 +1078,7 @@ public class MainViewModel : ViewModelBase
         _roomService.Save(NewRoom);
         NewRoom = new Room();
         NotifyFormModes();
+        CloseAllDrawers();
         Load();
     }
 
@@ -1060,6 +1113,79 @@ public class MainViewModel : ViewModelBase
     {
         NewRoom = new Room();
         NotifyFormModes();
+    }
+
+    // ── Bulk room creation ──────────────────────────────────────────────────
+    public int BulkRoomPropertyId
+    {
+        get => _bulkRoomPropertyId;
+        set => SetProperty(ref _bulkRoomPropertyId, value);
+    }
+    public string BulkRoomPrefix
+    {
+        get => _bulkRoomPrefix;
+        set => SetProperty(ref _bulkRoomPrefix, value);
+    }
+    public int BulkRoomStart
+    {
+        get => _bulkRoomStart;
+        set => SetProperty(ref _bulkRoomStart, value);
+    }
+    public int BulkRoomEnd
+    {
+        get => _bulkRoomEnd;
+        set => SetProperty(ref _bulkRoomEnd, value);
+    }
+    public decimal BulkRoomBaseRent
+    {
+        get => _bulkRoomBaseRent;
+        set => SetProperty(ref _bulkRoomBaseRent, value);
+    }
+
+    private void AddRoomsRange()
+    {
+        if (BulkRoomPropertyId <= 0)
+            throw new ValidationException("Vui lòng chọn nhà / khu trọ.");
+        if (BulkRoomStart > BulkRoomEnd)
+            throw new ValidationException("Số bắt đầu phải nhỏ hơn hoặc bằng số kết thúc.");
+        int total = BulkRoomEnd - BulkRoomStart + 1;
+        if (total > 100)
+            throw new ValidationException("Mỗi lần chỉ có thể tạo tối đa 100 phòng.");
+
+        int created = 0, skipped = 0;
+        var errors = new List<string>();
+        for (int n = BulkRoomStart; n <= BulkRoomEnd; n++)
+        {
+            var name = $"{BulkRoomPrefix}{n}".Trim();
+            var room = new Room
+            {
+                PropertyId = BulkRoomPropertyId,
+                RoomName   = name,
+                BaseRent   = BulkRoomBaseRent,
+                Status     = Enums.RoomStatus.Vacant
+            };
+            try
+            {
+                _roomService.Save(room);
+                created++;
+            }
+            catch (ValidationException ex) when (ex.Message.Contains("đã tồn tại"))
+            {
+                skipped++;
+            }
+            catch (ValidationException ex)
+            {
+                errors.Add($"{name}: {ex.Message}");
+            }
+        }
+
+        Load();
+
+        var parts = new List<string>();
+        if (created > 0)  parts.Add($"Đã tạo {created} phòng.");
+        if (skipped > 0)  parts.Add($"Bỏ qua {skipped} phòng đã tồn tại.");
+        if (errors.Count > 0) parts.Add($"Lỗi: {string.Join("; ", errors)}");
+        StatusMessage = string.Join(" ", parts);
     }
 
     private void AddTenant()
@@ -1939,6 +2065,52 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(NewMeterReading));
     }
 
+    private void CloseAllDrawers()
+    {
+        IsPropertyDrawerOpen = false;
+        IsRoomDrawerOpen     = false;
+        IsBulkRoomDrawerOpen = false;
+        IsRoomFeeDrawerOpen  = false;
+    }
+
+    private void RefreshWorkspaceRooms()
+    {
+        var rooms = SelectedProperty is null
+            ? new List<Room>()
+            : Rooms.Where(x => x.PropertyId == SelectedProperty.Id)
+                   .OrderBy(x => x.RoomName).ToList();
+        Replace(WorkspaceRooms, rooms);
+        OnPropertyChanged(nameof(WorkspacePropertyHeader));
+        if (SelectedRoom is not null && (SelectedProperty is null || SelectedRoom.PropertyId != SelectedProperty.Id))
+            SelectedRoom = null;
+    }
+
+    private void RefreshWorkspaceRoomFees()
+    {
+        var fees = SelectedRoom is null
+            ? new List<RoomFeeConfig>()
+            : RoomFeeConfigs.Where(x => x.RoomId == SelectedRoom.Id)
+                            .OrderBy(x => x.FeeTypeName).ToList();
+        Replace(WorkspaceRoomFees, fees);
+        OnPropertyChanged(nameof(WorkspaceRoomHeader));
+    }
+
+    private void RefreshMeterFilterRoomOptions()
+    {
+        var rooms = Rooms
+            .Where(x => MeterFilterPropertyId <= 0 || x.PropertyId == MeterFilterPropertyId)
+            .OrderBy(x => x.PropertyName)
+            .ThenBy(x => x.RoomName)
+            .ToList();
+
+        Replace(MeterFilterRoomOptions, rooms);
+
+        if (MeterFilterRoomId > 0 && rooms.All(x => x.Id != MeterFilterRoomId))
+        {
+            MeterFilterRoomId = 0;
+        }
+    }
+
     private void RefreshRoomFeeFilterRoomOptions()
     {
         var rooms = Rooms
@@ -2144,6 +2316,7 @@ public class MainViewModel : ViewModelBase
         FillRemainingPaymentCommand.RaiseCanExecuteChanged();
         CopyInvoiceCommand.RaiseCanExecuteChanged();
         CancelInvoiceCommand.RaiseCanExecuteChanged();
+        AddRoomsRangeCommand.RaiseCanExecuteChanged();
     }
 
     private static void RequireExisting(int id)

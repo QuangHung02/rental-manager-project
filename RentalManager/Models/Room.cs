@@ -23,4 +23,5 @@ public class Room
     public string DisplayNameWithProperty => string.IsNullOrWhiteSpace(PropertyName) ? RoomName : $"{PropertyName} - {RoomName}";
     public string RepresentativeTenantName => RoomTenants.FirstOrDefault(x => x.IsRepresentative && x.Status == Enums.RoomTenantStatus.Active)?.Tenant?.FullName ?? string.Empty;
     public string StatusText => DisplayText.For(Status);
+    public bool IsOccupied => Status == RoomStatus.Occupied;
 }
