@@ -871,7 +871,7 @@ public class MainViewModel : ViewModelBase
     public string TenantFormMode => NewTenant.Id > 0 ? $"Đang sửa: {NewTenant.FullName}" : "Đang thêm mới";
     public string FeeTypeFormMode => NewFeeType.Id > 0 ? $"Đang sửa: {NewFeeType.DisplayName}" : "Đang thêm mới";
     public string SelectedFeeTypeToggleActionText => SelectedFeeType?.ToggleActionText ?? "Ngừng";
-    public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? $"Đang sửa: {RoomFeeEditTitle}" : "Thêm khoản thu cho phòng";
+    public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? $"Đang sửa: {RoomFeeEditTitle}" : "Thêm khoản phí cho phòng";
     public string SelectedRoomFeeToggleActionText => SelectedRoomFeeConfig?.ToggleActionText ?? "Ngừng";
     public string WorkspacePropertyHeader => SelectedProperty is null
         ? "Chọn nhà / khu trọ bên trái"
