@@ -1064,8 +1064,56 @@ public class MainViewModel : ViewModelBase
 
     private void AddRoom()
     {
-        NewRoom.Id = 0;
-        _roomService.Save(NewRoom);
+        if (NewRoom.Id == 0 && !string.IsNullOrWhiteSpace(NewRoom.RoomName))
+        {
+            var names = NewRoom.RoomName.Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(n => n.Trim())
+                                        .Where(n => !string.IsNullOrEmpty(n))
+                                        .Distinct()
+                                        .Take(100) // Max 100 rooms per batch
+                                        .ToList();
+
+            if (names.Count > 0)
+            {
+                int created = 0;
+                int skipped = 0;
+                var existingRooms = _roomService.GetAll()
+                    .Where(r => r.PropertyId == NewRoom.PropertyId)
+                    .Select(r => r.RoomName)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var name in names)
+                {
+                    if (existingRooms.Contains(name))
+                    {
+                        skipped++;
+                        continue;
+                    }
+                    var room = new Room
+                    {
+                        PropertyId = NewRoom.PropertyId,
+                        RoomName = name,
+                        Floor = NewRoom.Floor,
+                        BaseRent = NewRoom.BaseRent,
+                        Status = NewRoom.Status,
+                        Note = NewRoom.Note
+                    };
+                    _roomService.Save(room);
+                    created++;
+                }
+
+                if (names.Count > 1 || skipped > 0)
+                {
+                    System.Windows.MessageBox.Show($"Đã tạo {created} phòng. Bỏ qua {skipped} phòng (trùng tên).", "Thông báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+            }
+        }
+        else
+        {
+            // Edit mode or empty name fallback
+            _roomService.Save(NewRoom);
+        }
+
         NewRoom = new Room();
         NotifyFormModes();
         CloseAllDrawers();

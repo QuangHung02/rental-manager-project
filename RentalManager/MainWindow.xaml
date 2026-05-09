@@ -141,8 +141,7 @@
                             <DockPanel>
                                 <TextBlock Text="Nhà &amp; Phòng" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button Content="＋ Thêm nhiều phòng" Command="{Binding OpenBulkRoomDrawerCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
-                                    <Button Content="＋ Thêm phòng" Command="{Binding OpenAddRoomDrawerCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
+                                                                        <Button Content="＋ Thêm phòng" Command="{Binding OpenAddRoomDrawerCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
                                     <Button Content="＋ Thêm nhà" Command="{Binding OpenAddPropertyDrawerCommand}" Style="{StaticResource MaterialDesignRaisedButton}"/>
                                 </StackPanel>
                             </DockPanel>
@@ -241,15 +240,18 @@
                         </Border.InputBindings>
                     </Border>
 
-                    <!-- ── PROPERTY DRAWER ── -->
-                    <Border Panel.ZIndex="51" Width="420" HorizontalAlignment="Right"
+                    <!-- ── PROPERTY MODAL (centered) ── -->
+                    <Border Panel.ZIndex="51"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Width="500" Margin="40"
                             Background="{DynamicResource MaterialDesignPaper}"
+                            CornerRadius="6"
                             Visibility="{Binding IsPropertyDrawerOpen, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
-                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}">
+                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Right" Command="{Binding CloseDrawerCommand}"
-                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Style="{StaticResource MaterialDesignIconButton}" Focusable="False"
                                             Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
                                         <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
                                     </Button>
@@ -257,35 +259,35 @@
                                                Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
-                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="20,0,20,20">
-                                <Button Content="Thêm mới" Command="{Binding AddPropertyCommand}" Margin="0,0,8,0"/>
-                                <Button Content="Lưu thay đổi" Command="{Binding SavePropertyCommand}" Margin="0,0,8,0"/>
-                                <Button Content="Hủy sửa" Command="{Binding CancelPropertyEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"/>
-                            </StackPanel>
-                            <ScrollViewer Margin="20,16,20,8" VerticalScrollBarVisibility="Auto">
-                                <StackPanel>
-                                    <TextBlock Text="Tên nhà / khu trọ" Margin="0,0,0,4"/>
-                                    <TextBox Text="{Binding NewProperty.Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
-                                    <TextBlock Text="Địa chỉ" Margin="0,0,0,4"/>
-                                    <TextBox Text="{Binding NewProperty.Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
-                                    <TextBlock Text="Ghi chú" Margin="0,0,0,4"/>
-                                    <TextBox Text="{Binding NewProperty.Note, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
-                                    <Button Content="Ngừng sử dụng" Command="{Binding DeactivatePropertyCommand}"
-                                            Style="{StaticResource MaterialDesignOutlinedButton}" HorizontalAlignment="Left" Margin="0,4,0,0"/>
+                            <StackPanel Margin="20,16,20,20">
+                                <TextBlock Text="Tên nhà / khu trọ" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding NewProperty.Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+                                <TextBlock Text="Địa chỉ" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding NewProperty.Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+                                <TextBlock Text="Ghi chú" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding NewProperty.Note, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,16"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="Ngừng sử dụng" Command="{Binding DeactivatePropertyCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,12,0" Foreground="{DynamicResource ErrorBrush}" BorderBrush="{DynamicResource ErrorBrush}"/>
+                                    <Button Content="Thêm mới" Command="{Binding AddPropertyCommand}" Margin="0,0,8,0" Padding="12,0"/>
+                                    <Button Content="Lưu thay đổi" Command="{Binding SavePropertyCommand}" Margin="0,0,8,0" Padding="12,0"/>
+                                    <Button Content="Hủy sửa" Command="{Binding CancelPropertyEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0"/>
                                 </StackPanel>
-                            </ScrollViewer>
+                            </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <!-- ── ROOM DRAWER ── -->
-                    <Border Panel.ZIndex="51" Width="460" HorizontalAlignment="Right"
+                    <!-- ── ROOM MODAL (centered) ── -->
+                    <Border Panel.ZIndex="51"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Width="540" Margin="40"
                             Background="{DynamicResource MaterialDesignPaper}"
+                            CornerRadius="6"
                             Visibility="{Binding IsRoomDrawerOpen, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
-                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}">
+                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Right" Command="{Binding CloseDrawerCommand}"
-                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Style="{StaticResource MaterialDesignIconButton}" Focusable="False"
                                             Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
                                         <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
                                     </Button>
@@ -293,77 +295,40 @@
                                                Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
-                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="20,0,20,20">
-                                <Button Content="Thêm mới" Command="{Binding AddRoomCommand}" Margin="0,0,8,0"/>
-                                <Button Content="Lưu thay đổi" Command="{Binding SaveRoomCommand}" Margin="0,0,8,0"/>
-                                <Button Content="Hủy sửa" Command="{Binding CancelRoomEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
-                                <Button Content="Trả phòng" Command="{Binding DeactivateRoomCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"/>
-                            </StackPanel>
-                            <ScrollViewer Margin="20,16,20,8" VerticalScrollBarVisibility="Auto">
-                                <StackPanel>
-                                    <TextBlock Text="Nhà / khu trọ" Margin="0,0,0,4"/>
-                                    <ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding NewRoom.PropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Margin="0,0,0,14"/>
-                                    <TextBlock Text="Tên phòng" Margin="0,0,0,4"/>
-                                    <TextBox Text="{Binding NewRoom.RoomName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
-                                    <TextBlock Text="Tầng" Margin="0,0,0,4"/>
-                                    <TextBox Text="{Binding NewRoom.Floor, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
-                                    <TextBlock Text="Tiền phòng (₫)" Margin="0,0,0,4"/>
-                                    <TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoom.BaseRent, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Margin="0,0,0,14"/>
-                                    <TextBlock Text="Trạng thái" Margin="0,0,0,4"/>
-                                    <ComboBox ItemsSource="{Binding RoomFormStatusOptions}" SelectedValue="{Binding NewRoom.Status}" SelectedValuePath="Value" DisplayMemberPath="Text" Margin="0,0,0,8"/>
+                            <StackPanel Margin="20,16,20,20">
+                                <WrapPanel Margin="0,0,0,14">
+                                    <StackPanel Margin="0,0,16,0" Width="240">
+                                        <TextBlock Text="Nhà / khu trọ" Margin="0,0,0,4"/>
+                                        <ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding NewRoom.PropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name"/>
+                                    </StackPanel>
+                                    <StackPanel Width="240">
+                                        <TextBlock Text="Tầng" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding NewRoom.Floor, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </WrapPanel>
+                                
+                                <TextBlock Text="Tên phòng" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding NewRoom.RoomName, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MaxHeight="60" VerticalScrollBarVisibility="Auto"/>
+                                <TextBlock Text="Có thể nhập một phòng hoặc nhiều phòng, phân tách bằng dấu phẩy, chấm phẩy hoặc xuống dòng. Ví dụ: 1.01, 1.02, 1.03" FontSize="11" Opacity="0.6" Margin="0,4,0,14" TextWrapping="Wrap"/>
+                                
+                                <WrapPanel Margin="0,0,0,20">
+                                    <StackPanel Margin="0,0,16,0" Width="240">
+                                        <TextBlock Text="Giá thuê mặc định (₫)" Margin="0,0,0,4"/>
+                                        <TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewRoom.BaseRent, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/>
+                                    </StackPanel>
+                                    <StackPanel Width="240">
+                                        <TextBlock Text="Trạng thái" Margin="0,0,0,4"/>
+                                        <ComboBox ItemsSource="{Binding RoomFormStatusOptions}" SelectedValue="{Binding NewRoom.Status}" SelectedValuePath="Value" DisplayMemberPath="Text"/>
+                                    </StackPanel>
+                                </WrapPanel>
+                                
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="Trả phòng" Command="{Binding DeactivateRoomCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,12,0" Visibility="{Binding NewRoom.IsOccupied, Converter={StaticResource BoolToVis}}"/>
+                                    <Button Content="Thêm mới" Command="{Binding AddRoomCommand}" Margin="0,0,8,0" Padding="12,0"/>
+                                    <Button Content="Lưu thay đổi" Command="{Binding SaveRoomCommand}" Margin="0,0,8,0" Padding="12,0"/>
+                                    <Button Content="Hủy sửa" Command="{Binding CancelRoomEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0"/>
                                 </StackPanel>
-                            </ScrollViewer>
-                        </DockPanel>
-                    </Border>
-
-                    <!-- ── BULK ROOM DRAWER ── -->
-                    <Border Panel.ZIndex="51" Width="460" HorizontalAlignment="Right"
-                            Background="{DynamicResource MaterialDesignPaper}"
-                            Visibility="{Binding IsBulkRoomDrawerOpen, Converter={StaticResource BoolToVis}}">
-                        <DockPanel>
-                            <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}">
-                                <DockPanel>
-                                    <Button DockPanel.Dock="Right" Command="{Binding CloseDrawerCommand}"
-                                            Style="{StaticResource MaterialDesignIconButton}"
-                                            Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
-                                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
-                                    </Button>
-                                    <TextBlock Text="Thêm nhiều phòng cùng lúc" FontSize="16" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
-                                </DockPanel>
-                            </Border>
-                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="20,0,20,20">
-                                <Button Content="Tạo nhiều phòng" Command="{Binding AddRoomsRangeCommand}" Margin="0,0,8,0"/>
-                                <Button Content="Đóng" Command="{Binding CloseDrawerCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"/>
                             </StackPanel>
-                            <ScrollViewer Margin="20,16,20,8" VerticalScrollBarVisibility="Auto">
-                                <StackPanel>
-                                    <Border Padding="12,8" Background="#f0f7ff" Margin="0,0,0,16" CornerRadius="4">
-                                        <TextBlock TextWrapping="Wrap" Foreground="#1565c0" FontSize="12">
-                                            <Run>Ví dụ: Tiền tố = </Run><Run FontStyle="Italic">Phòng </Run>
-                                            <Run>, Từ = 101, Đến = 110 → tạo Phòng 101 … Phòng 110.</Run>
-                                            <LineBreak/><Run>Phòng đã tồn tại sẽ bị bỏ qua. Tối đa 100 phòng mỗi lần.</Run>
-                                        </TextBlock>
-                                    </Border>
-                                    <TextBlock Text="Nhà / khu trọ" Margin="0,0,0,4"/>
-                                    <ComboBox ItemsSource="{Binding Properties}" SelectedValue="{Binding BulkRoomPropertyId}" SelectedValuePath="Id" DisplayMemberPath="Name" Margin="0,0,0,14"/>
-                                    <TextBlock Text="Tiền tố tên phòng (tùy chọn)" Margin="0,0,0,4"/>
-                                    <TextBox Text="{Binding BulkRoomPrefix, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
-                                    <Grid Margin="0,0,0,14">
-                                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Số bắt đầu" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding BulkRoomStart, UpdateSourceTrigger=PropertyChanged}"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Số kết thúc" Margin="0,0,0,4"/>
-                                            <TextBox Text="{Binding BulkRoomEnd, UpdateSourceTrigger=PropertyChanged}"/>
-                                        </StackPanel>
-                                    </Grid>
-                                    <TextBlock Text="Giá thuê mặc định (₫, tùy chọn)" Margin="0,0,0,4"/>
-                                    <TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding BulkRoomBaseRent, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Margin="0,0,0,8"/>
-                                </StackPanel>
-                            </ScrollViewer>
                         </DockPanel>
                     </Border>
 
