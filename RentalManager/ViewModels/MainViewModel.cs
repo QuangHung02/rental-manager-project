@@ -96,6 +96,8 @@ public class MainViewModel : ViewModelBase
     private bool _isRoomDrawerOpen;
     private bool _isBulkRoomDrawerOpen;
     private bool _isRoomFeeDrawerOpen;
+    private bool _isTenantDrawerOpen;
+    private bool _assignmentShowFormerTenants;
 
     public MainViewModel()
     {
@@ -143,6 +145,8 @@ public class MainViewModel : ViewModelBase
         OpenAddRoomDrawerCommand    = new RelayCommand(() => { CancelRoomEdit();     IsRoomDrawerOpen     = true; });
         OpenBulkRoomDrawerCommand   = new RelayCommand(() => { IsBulkRoomDrawerOpen  = true; });
         CloseDrawerCommand          = new RelayCommand(CloseAllDrawers);
+        OpenAddTenantDrawerCommand  = new RelayCommand(() => { CancelTenantEdit(); IsTenantDrawerOpen = true; });
+        OpenEditTenantDrawerCommand = new RelayCommand<Tenant>(t => Run(() => { SelectedTenant = t; EditTenant(); IsTenantDrawerOpen = true; }));
         OpenEditPropertyDrawerCommand = new RelayCommand<Property>(p => Run(() => { SelectedProperty = p; EditProperty(); IsPropertyDrawerOpen = true; }));
         OpenEditRoomDrawerCommand     = new RelayCommand<Room>(r => Run(() => { SelectedRoom = r; EditRoom(); IsRoomDrawerOpen = true; }));
         OpenRoomFeeDrawerCommand      = new RelayCommand<Room>(r => { SelectedRoom = r; NewRoomFeePropertyId = r?.PropertyId ?? 0; NewRoomFeeConfig.RoomId = r?.Id ?? 0; OnPropertyChanged(nameof(NewRoomFeeConfig)); IsRoomFeeDrawerOpen = true; });
@@ -407,6 +411,8 @@ public class MainViewModel : ViewModelBase
             if (SetProperty(ref _assignmentFilterRoomId, value))
             {
                 RefreshAssignmentFilters();
+                NewRoomTenant.RoomId = value;
+                OnPropertyChanged(nameof(NewRoomTenant));
             }
         }
     }
@@ -952,7 +958,22 @@ public class MainViewModel : ViewModelBase
     public bool IsRoomDrawerOpen      { get => _isRoomDrawerOpen;      set { if (SetProperty(ref _isRoomDrawerOpen,      value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsBulkRoomDrawerOpen  { get => _isBulkRoomDrawerOpen;  set { if (SetProperty(ref _isBulkRoomDrawerOpen,  value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsRoomFeeDrawerOpen   { get => _isRoomFeeDrawerOpen;   set { if (SetProperty(ref _isRoomFeeDrawerOpen,   value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
-    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen;
+    public bool IsTenantDrawerOpen    { get => _isTenantDrawerOpen;    set { if (SetProperty(ref _isTenantDrawerOpen,    value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen;
+
+    public bool AssignmentShowFormerTenants
+    {
+        get => _assignmentShowFormerTenants;
+        set
+        {
+            if (SetProperty(ref _assignmentShowFormerTenants, value))
+            {
+                RefreshTenantStatusCollections();
+                RefreshAssignmentTenantOptions();
+            }
+        }
+    }
+
     public RelayCommand CancelPropertyEditCommand { get; }
     public RelayCommand CancelRoomEditCommand { get; }
     public RelayCommand CancelTenantEditCommand { get; }
@@ -974,6 +995,8 @@ public class MainViewModel : ViewModelBase
     public RelayCommand<Invoice> IssueInvoiceRowCommand { get; }
     public RelayCommand<Invoice> CopyInvoiceRowCommand { get; }
     public RelayCommand<Invoice> CancelInvoiceRowCommand { get; }
+    public RelayCommand OpenAddTenantDrawerCommand { get; }
+    public RelayCommand<Tenant> OpenEditTenantDrawerCommand { get; }
 
     public void Load()
     {
@@ -1811,10 +1834,21 @@ public class MainViewModel : ViewModelBase
 
     private void RefreshTenantStatusCollections()
     {
+        foreach (var t in Tenants)
+        {
+            var activeRT = RoomTenants.FirstOrDefault(x => x.TenantId == t.Id && x.Status == RoomTenantStatus.Active);
+            t.CurrentRoomName = activeRT != null ? $"{activeRT.RoomName} ({activeRT.PropertyName})" : string.Empty;
+        }
+
         Replace(RentingTenants, Tenants.Where(x => x.Status == TenantStatus.Renting).OrderBy(x => x.FullName).ThenBy(x => x.Phone));
         Replace(UnassignedTenants, Tenants.Where(x => x.Status == TenantStatus.Unassigned).OrderBy(x => x.FullName).ThenBy(x => x.Phone));
         Replace(FormerTenants, Tenants.Where(x => x.Status == TenantStatus.Former).OrderBy(x => x.FullName).ThenBy(x => x.Phone));
-        Replace(AssignableTenants, UnassignedTenants);
+        
+        var assignable = AssignmentShowFormerTenants 
+            ? UnassignedTenants.Concat(FormerTenants).OrderBy(x => x.FullName).ThenBy(x => x.Phone)
+            : UnassignedTenants.AsEnumerable();
+        
+        Replace(AssignableTenants, assignable);
         OnPropertyChanged(nameof(HasAssignableTenants));
         OnPropertyChanged(nameof(HasNoAssignableTenants));
     }
@@ -2138,6 +2172,7 @@ public class MainViewModel : ViewModelBase
         IsRoomDrawerOpen     = false;
         IsBulkRoomDrawerOpen = false;
         IsRoomFeeDrawerOpen  = false;
+        IsTenantDrawerOpen   = false;
     }
 
     private void RefreshWorkspaceRooms()

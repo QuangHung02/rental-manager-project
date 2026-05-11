@@ -26,4 +26,7 @@ public class Tenant
             return string.IsNullOrWhiteSpace(suffix) ? FullName : $"{FullName} - {suffix}";
         }
     }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string CurrentRoomName { get; set; } = string.Empty;
 }
