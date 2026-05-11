@@ -10,6 +10,7 @@ public class DemoDataService
     public void Seed()
     {
         using var db = DbContextFactory.Create();
+        ResetDemoData(db);
 
         var electricity = GetFeeType(db, "Electricity", CalculationType.Meter, "kWh", 3500);
         var water = GetFeeType(db, "Water", CalculationType.PerPerson, "person", 100000);
@@ -32,12 +33,19 @@ public class DemoDataService
         var binh = GetTenant(db, "Trần Thị Bình", "0901000002");
         var cuong = GetTenant(db, "Lê Hoàng Cường", "0901000003");
         var duy = GetTenant(db, "Phạm Minh Duy", "0901000004");
+        var ha = GetTenant(db, "Vũ Thu Hà", "0901000005");
+        var lam = GetTenant(db, "Đỗ Minh Lâm", "0901000006");
         db.SaveChanges();
 
         Assign(db, p101, an, true);
         Assign(db, p101, binh, false);
         Assign(db, p102, cuong, true);
         Assign(db, p201, duy, true);
+        EndedAssignment(db, p102, ha);
+        db.SaveChanges();
+
+        RefreshTenantStatuses(db);
+        lam.Status = TenantStatus.Unassigned;
         db.SaveChanges();
 
         AddOccupiedRoomConfigs(db, p101, electricity, water, wifi, parking, 2);
@@ -48,6 +56,21 @@ public class DemoDataService
         AddReading(db, p101, electricity, "2026-04", 100, 160, 3500);
         AddReading(db, p102, electricity, "2026-04", 80, 120, 3500);
         AddReading(db, p201, electricity, "2026-04", 200, 260, 3500);
+        db.SaveChanges();
+    }
+
+    private static void ResetDemoData(RentalManagerDbContext db)
+    {
+        db.Payments.RemoveRange(db.Payments);
+        db.InvoiceItems.RemoveRange(db.InvoiceItems);
+        db.Invoices.RemoveRange(db.Invoices);
+        db.MeterReadings.RemoveRange(db.MeterReadings);
+        db.RoomFeeConfigs.RemoveRange(db.RoomFeeConfigs);
+        db.RoomTenants.RemoveRange(db.RoomTenants);
+        db.Tenants.RemoveRange(db.Tenants);
+        db.Rooms.RemoveRange(db.Rooms);
+        db.Properties.RemoveRange(db.Properties);
+        db.FeeTypes.RemoveRange(db.FeeTypes);
         db.SaveChanges();
     }
 
@@ -118,6 +141,40 @@ public class DemoDataService
         }
 
         assignment.IsRepresentative = representative;
+        tenant.Status = TenantStatus.Renting;
+    }
+
+    private static void EndedAssignment(RentalManagerDbContext db, Room room, Tenant tenant)
+    {
+        var assignment = db.RoomTenants.FirstOrDefault(x => x.RoomId == room.Id && x.TenantId == tenant.Id && x.Status == RoomTenantStatus.Ended);
+        if (assignment is null)
+        {
+            assignment = new RoomTenant
+            {
+                Room = room,
+                Tenant = tenant,
+                Status = RoomTenantStatus.Ended,
+                StartDate = new DateTime(2026, 2, 1),
+                EndDate = new DateTime(2026, 3, 31)
+            };
+            db.RoomTenants.Add(assignment);
+        }
+
+        assignment.IsRepresentative = false;
+        assignment.EndDate ??= new DateTime(2026, 3, 31);
+        tenant.Status = TenantStatus.Former;
+    }
+
+    private static void RefreshTenantStatuses(RentalManagerDbContext db)
+    {
+        foreach (var tenant in db.Tenants.Include(x => x.RoomTenants))
+        {
+            tenant.Status = tenant.RoomTenants.Any(x => x.Status == RoomTenantStatus.Active)
+                ? TenantStatus.Renting
+                : tenant.RoomTenants.Any(x => x.Status == RoomTenantStatus.Ended)
+                    ? TenantStatus.Former
+                    : TenantStatus.Unassigned;
+        }
     }
 
     private static void AddOccupiedRoomConfigs(RentalManagerDbContext db, Room room, FeeType electricity, FeeType water, FeeType wifi, FeeType parking, decimal parkingQuantity)

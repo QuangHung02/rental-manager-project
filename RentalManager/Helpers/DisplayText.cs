@@ -20,6 +20,14 @@ public static class DisplayText
         _ => status.ToString()
     };
 
+    public static string For(TenantStatus status) => status switch
+    {
+        TenantStatus.Unassigned => "Chưa phân phòng",
+        TenantStatus.Renting => "Đang thuê",
+        TenantStatus.Former => "Đã rời",
+        _ => status.ToString()
+    };
+
     public static string For(InvoiceStatus status) => status switch
     {
         InvoiceStatus.Draft => "Nháp",

@@ -175,6 +175,10 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<Room> FilteredRooms { get; } = new();
     public ObservableCollection<Tenant> Tenants { get; } = new();
     public ObservableCollection<Tenant> FilteredTenants { get; } = new();
+    public ObservableCollection<Tenant> RentingTenants { get; } = new();
+    public ObservableCollection<Tenant> UnassignedTenants { get; } = new();
+    public ObservableCollection<Tenant> FormerTenants { get; } = new();
+    public ObservableCollection<Tenant> AssignableTenants { get; } = new();
     public ObservableCollection<RoomTenant> RoomTenants { get; } = new();
     public ObservableCollection<RoomTenant> ActiveRoomTenants { get; } = new();
     public ObservableCollection<RoomTenant> FilteredAssignmentHistory { get; } = new();
@@ -230,7 +234,7 @@ public class MainViewModel : ViewModelBase
     public IReadOnlyList<int> MonthOptions { get; } = Enumerable.Range(1, 12).ToList();
     public ObservableCollection<int> YearOptions { get; } = new();
     public IReadOnlyList<string> RoomStatusFilterOptions { get; } = new[] { "Tất cả", "Đang cho thuê", "Đang trống" };
-    public IReadOnlyList<string> TenantStatusFilterOptions { get; } = new[] { "Tất cả", "Đang thuê", "Chưa phân phòng", "Đã từng thuê" };
+    public IReadOnlyList<string> TenantStatusFilterOptions { get; } = new[] { "Tất cả", "Đang thuê", "Chưa phân phòng", "Đã rời" };
     public IReadOnlyList<string> AssignmentHistoryFilterOptions { get; } = new[] { "Đã kết thúc", "Đang thuê", "Tất cả" };
     public IReadOnlyList<string> InvoiceStatusFilterOptions { get; } = new[] { "Tất cả", "Nháp", "Đã chốt", "Thanh toán một phần", "Đã trả", "Đã hủy" };
     public IReadOnlyList<string> PaymentMethodFilterOptions { get; } = new[] { "Tất cả", "Tiền mặt", "Chuyển khoản", "Momo", "Khác" };
@@ -251,6 +255,9 @@ public class MainViewModel : ViewModelBase
         new EnumOption<PaymentMethod>(PaymentMethod.Momo, "Momo"),
         new EnumOption<PaymentMethod>(PaymentMethod.Other, "Khác")
     };
+
+    public bool HasAssignableTenants => AssignableTenants.Count > 0;
+    public bool HasNoAssignableTenants => !HasAssignableTenants;
 
     public Property? SelectedProperty
     {
@@ -981,9 +988,11 @@ public class MainViewModel : ViewModelBase
         RefreshInvoiceFilterRoomOptions();
         RefreshInvoiceFormRoomOptions();
         RefreshAssignmentRoomOptions();
+        _tenantService.SyncStatusesFromAssignments();
         Replace(Tenants, _tenantService.GetAll());
-        RefreshAssignmentTenantOptions();
         Replace(RoomTenants, _roomTenantService.GetAll());
+        RefreshTenantStatusCollections();
+        RefreshAssignmentTenantOptions();
         Replace(FeeTypes, _feeTypeService.GetAll());
         Replace(RoomFeeConfigs, _roomFeeConfigService.GetAll());
         Replace(MeterReadings, _meterReadingService.GetAll());
@@ -1257,7 +1266,7 @@ public class MainViewModel : ViewModelBase
     private void EditTenant()
     {
         if (SelectedTenant is null) throw new ValidationException("Chọn người thuê trước.");
-        NewTenant = new Tenant { Id = SelectedTenant.Id, FullName = SelectedTenant.FullName, Phone = SelectedTenant.Phone, Email = SelectedTenant.Email, IdentityNumber = SelectedTenant.IdentityNumber, Note = SelectedTenant.Note, CreatedAt = SelectedTenant.CreatedAt, UpdatedAt = SelectedTenant.UpdatedAt };
+        NewTenant = new Tenant { Id = SelectedTenant.Id, FullName = SelectedTenant.FullName, Phone = SelectedTenant.Phone, Email = SelectedTenant.Email, IdentityNumber = SelectedTenant.IdentityNumber, Status = SelectedTenant.Status, Note = SelectedTenant.Note, CreatedAt = SelectedTenant.CreatedAt, UpdatedAt = SelectedTenant.UpdatedAt };
         NotifyFormModes();
     }
 
@@ -1790,7 +1799,7 @@ public class MainViewModel : ViewModelBase
     private void RefreshAssignmentTenantOptions()
     {
         var text = AssignmentTenantSearchText.Trim();
-        var tenants = Tenants.AsEnumerable();
+        var tenants = AssignableTenants.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(text))
         {
@@ -1798,6 +1807,16 @@ public class MainViewModel : ViewModelBase
         }
 
         Replace(AssignmentTenantOptions, tenants.OrderBy(x => x.FullName).ThenBy(x => x.Phone));
+    }
+
+    private void RefreshTenantStatusCollections()
+    {
+        Replace(RentingTenants, Tenants.Where(x => x.Status == TenantStatus.Renting).OrderBy(x => x.FullName).ThenBy(x => x.Phone));
+        Replace(UnassignedTenants, Tenants.Where(x => x.Status == TenantStatus.Unassigned).OrderBy(x => x.FullName).ThenBy(x => x.Phone));
+        Replace(FormerTenants, Tenants.Where(x => x.Status == TenantStatus.Former).OrderBy(x => x.FullName).ThenBy(x => x.Phone));
+        Replace(AssignableTenants, UnassignedTenants);
+        OnPropertyChanged(nameof(HasAssignableTenants));
+        OnPropertyChanged(nameof(HasNoAssignableTenants));
     }
 
     private void SetAssignmentTenantSearchText(string text)
@@ -1872,15 +1891,15 @@ public class MainViewModel : ViewModelBase
         IEnumerable<Tenant> tenants = Tenants;
         if (TenantStatusFilter == "Đang thuê")
         {
-            tenants = tenants.Where(HasActiveAssignment);
+            tenants = tenants.Where(x => x.Status == TenantStatus.Renting);
         }
         else if (TenantStatusFilter == "Chưa phân phòng")
         {
-            tenants = tenants.Where(x => !HasAnyAssignment(x));
+            tenants = tenants.Where(x => x.Status == TenantStatus.Unassigned);
         }
-        else if (TenantStatusFilter == "Đã từng thuê")
+        else if (TenantStatusFilter == "Đã rời")
         {
-            tenants = tenants.Where(x => !HasActiveAssignment(x) && HasEndedAssignment(x));
+            tenants = tenants.Where(x => x.Status == TenantStatus.Former);
         }
 
         if (!string.IsNullOrWhiteSpace(text))

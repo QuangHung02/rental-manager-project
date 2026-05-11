@@ -490,6 +490,7 @@
                             <DataGridTextColumn Header="Điện thoại" Binding="{Binding Phone}" Width="130"/>
                             <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180"/>
                             <DataGridTextColumn Header="CCCD/CMND" Binding="{Binding IdentityNumber}" Width="140"/>
+                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="130"/>
                             <DataGridTextColumn Header="Ghi chú" Binding="{Binding Note}" Width="240"/>
                             <DataGridTemplateColumn Header="Hành động" Width="SizeToCells">
                                 <DataGridTemplateColumn.CellTemplate>

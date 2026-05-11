@@ -48,6 +48,7 @@ public class RoomTenantService : CrudService<RoomTenant>
             room.Status = RoomStatus.Occupied;
         }
 
+        SetTenantStatus(db, entity.TenantId, TenantStatus.Renting);
         db.SaveChanges();
         return entity;
     }
@@ -62,11 +63,13 @@ public class RoomTenantService : CrudService<RoomTenant>
         }
 
         var roomId = assignment.RoomId;
+        var tenantId = assignment.TenantId;
         assignment.Status = RoomTenantStatus.Ended;
         assignment.EndDate = endDate ?? DateTime.Today;
         assignment.IsRepresentative = false;
         db.SaveChanges();
         RecalculateRoomStatus(db, roomId);
+        RecalculateTenantStatus(db, tenantId);
         db.SaveChanges();
     }
 
@@ -91,6 +94,7 @@ public class RoomTenantService : CrudService<RoomTenant>
 
         var effectiveDate = moveDate ?? DateTime.Today;
         var oldRoomId = oldAssignment.RoomId;
+        var tenantId = oldAssignment.TenantId;
         EnsureTenantHasNoOtherActiveAssignment(db, oldAssignment.TenantId, oldAssignment.Id);
         oldAssignment.Status = RoomTenantStatus.Ended;
         oldAssignment.EndDate = effectiveDate;
@@ -113,6 +117,7 @@ public class RoomTenantService : CrudService<RoomTenant>
         db.SaveChanges();
         RecalculateRoomStatus(db, oldRoomId);
         SetRoomStatus(db, targetRoomId, RoomStatus.Occupied);
+        SetTenantStatus(db, tenantId, TenantStatus.Renting);
         db.SaveChanges();
     }
 
@@ -156,6 +161,29 @@ public class RoomTenantService : CrudService<RoomTenant>
 
         room.Status = status;
         room.UpdatedAt = DateTime.Now;
+    }
+
+    private static void RecalculateTenantStatus(RentalManagerDbContext db, int tenantId)
+    {
+        var status = db.RoomTenants.Any(x => x.TenantId == tenantId && x.Status == RoomTenantStatus.Active)
+            ? TenantStatus.Renting
+            : db.RoomTenants.Any(x => x.TenantId == tenantId && x.Status == RoomTenantStatus.Ended)
+                ? TenantStatus.Former
+                : TenantStatus.Unassigned;
+
+        SetTenantStatus(db, tenantId, status);
+    }
+
+    private static void SetTenantStatus(RentalManagerDbContext db, int tenantId, TenantStatus status)
+    {
+        var tenant = db.Tenants.Find(tenantId);
+        if (tenant is null)
+        {
+            return;
+        }
+
+        tenant.Status = status;
+        tenant.UpdatedAt = DateTime.Now;
     }
 
     private static void EnsureTenantHasNoOtherActiveAssignment(RentalManagerDbContext db, int tenantId, int currentAssignmentId)

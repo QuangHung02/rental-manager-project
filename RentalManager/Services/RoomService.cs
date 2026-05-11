@@ -32,6 +32,7 @@ public class RoomService : CrudService<Room>
         var activeAssignments = db.RoomTenants
             .Where(x => x.RoomId == id && x.Status == RoomTenantStatus.Active)
             .ToList();
+        var tenantIds = activeAssignments.Select(x => x.TenantId).Distinct().ToList();
 
         foreach (var assignment in activeAssignments)
         {
@@ -43,7 +44,30 @@ public class RoomService : CrudService<Room>
         room.Status = RoomStatus.Vacant;
         room.UpdatedAt = DateTime.Now;
         db.SaveChanges();
+
+        foreach (var tenantId in tenantIds)
+        {
+            RecalculateTenantStatus(db, tenantId);
+        }
+
+        db.SaveChanges();
         return activeAssignments.Count;
+    }
+
+    private static void RecalculateTenantStatus(RentalManagerDbContext db, int tenantId)
+    {
+        var tenant = db.Tenants.Find(tenantId);
+        if (tenant is null)
+        {
+            return;
+        }
+
+        tenant.Status = db.RoomTenants.Any(x => x.TenantId == tenantId && x.Status == RoomTenantStatus.Active)
+            ? TenantStatus.Renting
+            : db.RoomTenants.Any(x => x.TenantId == tenantId && x.Status == RoomTenantStatus.Ended)
+                ? TenantStatus.Former
+                : TenantStatus.Unassigned;
+        tenant.UpdatedAt = DateTime.Now;
     }
 
     protected override IQueryable<Room> Include(IQueryable<Room> query)

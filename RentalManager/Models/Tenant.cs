@@ -1,3 +1,6 @@
+using RentalManager.Enums;
+using RentalManager.Helpers;
+
 namespace RentalManager.Models;
 
 public class Tenant
@@ -7,10 +10,12 @@ public class Tenant
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? IdentityNumber { get; set; }
+    public TenantStatus Status { get; set; } = TenantStatus.Unassigned;
     public string? Note { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
     public ICollection<RoomTenant> RoomTenants { get; set; } = new List<RoomTenant>();
+    public string StatusText => DisplayText.For(Status);
     public string AssignmentDisplayText
     {
         get
