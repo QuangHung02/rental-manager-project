@@ -35,14 +35,56 @@ public static class ErrorMessageMapper
             return "Vui lòng chọn phòng và loại phí.";
         }
 
+        if (message.Contains("Value could not be converted", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Vui lòng chọn giá trị hợp lệ.";
+        }
+
+        if (message.Contains("Input string was not in a correct format", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("The input string", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("is not a valid value", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Dữ liệu nhập không đúng định dạng.";
+        }
+
         if (message.Contains("Room was not found", StringComparison.OrdinalIgnoreCase))
         {
             return "Không tìm thấy phòng đã chọn.";
         }
 
+        if (message.Contains("Property was not found", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Không tìm thấy nhà / khu trọ đã chọn.";
+        }
+
         if (message.Contains("Fee type was not found", StringComparison.OrdinalIgnoreCase))
         {
             return "Không tìm thấy loại phí đã chọn.";
+        }
+
+        if (message.Contains("Property name is required", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Tên nhà / khu trọ là bắt buộc.";
+        }
+
+        if (message.Contains("Room must belong to a property", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Vui lòng chọn nhà / khu trọ cho phòng.";
+        }
+
+        if (message.Contains("Tenant full name is required", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Họ tên người thuê là bắt buộc.";
+        }
+
+        if (message.Contains("Fee type name is required", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Tên khoản phí là bắt buộc.";
+        }
+
+        if (message.Contains("Default unit price must be greater than or equal to 0", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Đơn giá mặc định phải lớn hơn hoặc bằng 0.";
         }
 
         if (message.Contains("Invoice was not found", StringComparison.OrdinalIgnoreCase))

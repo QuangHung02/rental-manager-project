@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using RentalManager.Enums;
 using RentalManager.Helpers;
 
@@ -24,4 +25,11 @@ public class Room
     public string RepresentativeTenantName => RoomTenants.FirstOrDefault(x => x.IsRepresentative && x.Status == Enums.RoomTenantStatus.Active)?.Tenant?.FullName ?? string.Empty;
     public string StatusText => DisplayText.For(Status);
     public bool IsOccupied => Status == RoomStatus.Occupied;
+    public bool IsVacant => Status == RoomStatus.Vacant;
+    [NotMapped]
+    public IEnumerable<RoomTenant> ActiveRoomTenants => RoomTenants.Where(x => x.Status == Enums.RoomTenantStatus.Active).OrderByDescending(x => x.IsRepresentative).ThenBy(x => x.TenantName);
+    [NotMapped]
+    public int ActiveTenantCount => ActiveRoomTenants.Count();
+    [NotMapped]
+    public string ActiveTenantCountText => $"Số người: {ActiveTenantCount}";
 }
