@@ -9,7 +9,6 @@ using RentalManager.Enums;
 using RentalManager.Helpers;
 using RentalManager.Models;
 using RentalManager.Services;
-using RentalManager.Views;
 
 namespace RentalManager.ViewModels;
 
@@ -81,6 +80,7 @@ public class MainViewModel : ViewModelBase
     private int _assignmentFilterPropertyId;
     private int _assignmentFilterRoomId;
     private string _assignmentRoomSearch = string.Empty;
+    private bool _assignmentVacantOnly;
     private int _assignmentNewPropertyId;
     private int _assignmentHistoryPropertyId;
     private int _assignmentHistoryRoomId;
@@ -104,8 +104,14 @@ public class MainViewModel : ViewModelBase
     private bool _isAssignmentDrawerOpen;
     private bool _isAssignmentHistoryDrawerOpen;
     private bool _isAssignmentRoomDetailDrawerOpen;
+    private bool _isTransferRoomDrawerOpen;
     private Room? _selectedAssignmentRoom;
     private bool _assignmentShowFormerTenants;
+    private RoomTenant? _transferAssignment;
+    private int _transferPropertyId;
+    private int _transferRoomId;
+    private DateTime _transferMoveDate = DateTime.Today;
+    private bool _transferIsRepresentative;
 
     public MainViewModel()
     {
@@ -156,6 +162,9 @@ public class MainViewModel : ViewModelBase
         OpenAssignmentRoomDetailCommand = new RelayCommand<Room>(room => Run(() => OpenAssignmentRoomDetail(room)));
         SelectAssignmentPropertyCommand = new RelayCommand<Property>(SelectAssignmentProperty);
         ShowAllAssignmentPropertiesCommand = new RelayCommand(ShowAllAssignmentProperties);
+        EndSelectedAssignmentRoomCommand = new RelayCommand(() => Run(EndSelectedAssignmentRoom));
+        ConfirmTransferRoomCommand = new RelayCommand(() => Run(ConfirmTransferRoom));
+        CloseTransferRoomDrawerCommand = new RelayCommand(CloseTransferRoomDrawer);
         ClearAssignmentHistoryFiltersCommand = new RelayCommand(ClearAssignmentHistoryFilters);
         AddRoomsRangeCommand = new RelayCommand(() => Run(AddRoomsRange));
         OpenAddPropertyDrawerCommand = new RelayCommand(() => { CancelPropertyEdit(); IsPropertyDrawerOpen = true; });
@@ -209,6 +218,7 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<Room> FilteredAssignmentRooms { get; } = new();
     public ObservableCollection<Room> AssignmentHistoryRoomOptions { get; } = new();
     public ObservableCollection<RoomTenant> SelectedAssignmentRoomTenants { get; } = new();
+    public ObservableCollection<Room> TransferRoomOptions { get; } = new();
     public ObservableCollection<Tenant> AssignmentTenantOptions { get; } = new();
     public ObservableCollection<FeeType> FeeTypes { get; } = new();
     public ObservableCollection<FeeType> MeterReadingFeeTypeOptions { get; } = new();
@@ -454,6 +464,18 @@ public class MainViewModel : ViewModelBase
         }
     }
 
+    public bool AssignmentVacantOnly
+    {
+        get => _assignmentVacantOnly;
+        set
+        {
+            if (SetProperty(ref _assignmentVacantOnly, value))
+            {
+                RefreshAssignmentFilterRoomOptions();
+            }
+        }
+    }
+
     public DateTime? AssignmentStartDate
     {
         get => NewRoomTenant.StartDate;
@@ -526,12 +548,6 @@ public class MainViewModel : ViewModelBase
             NewRoomTenant.TenantId = value?.Id ?? 0;
             OnPropertyChanged(nameof(NewRoomTenant));
 
-            if (value is null)
-            {
-                return;
-            }
-
-            SetAssignmentTenantSearchText(value.AssignmentDisplayText);
         }
     }
 
@@ -598,6 +614,44 @@ public class MainViewModel : ViewModelBase
     public string AssignmentRoomDetailTitle => SelectedAssignmentRoom is null
         ? "Chi tiết phòng"
         : $"Chi tiết phòng {SelectedAssignmentRoom.RoomName} — {SelectedAssignmentRoom.PropertyName}";
+
+    public bool HasSelectedAssignmentRoomTenants => SelectedAssignmentRoomTenants.Count > 0;
+    public bool HasNoSelectedAssignmentRoomTenants => !HasSelectedAssignmentRoomTenants;
+
+    public string TransferTenantName => _transferAssignment?.TenantName ?? string.Empty;
+    public string TransferCurrentRoomText => _transferAssignment is null
+        ? string.Empty
+        : $"{_transferAssignment.PropertyName} - {_transferAssignment.RoomName}";
+
+    public int TransferPropertyId
+    {
+        get => _transferPropertyId;
+        set
+        {
+            if (SetProperty(ref _transferPropertyId, value))
+            {
+                RefreshTransferRoomOptions();
+            }
+        }
+    }
+
+    public int TransferRoomId
+    {
+        get => _transferRoomId;
+        set => SetProperty(ref _transferRoomId, value);
+    }
+
+    public DateTime? TransferMoveDate
+    {
+        get => _transferMoveDate;
+        set => SetProperty(ref _transferMoveDate, value ?? DateTime.Today);
+    }
+
+    public bool TransferIsRepresentative
+    {
+        get => _transferIsRepresentative;
+        set => SetProperty(ref _transferIsRepresentative, value);
+    }
 
     public Room? SelectedAssignmentRoom
     {
@@ -1082,6 +1136,9 @@ public class MainViewModel : ViewModelBase
     public RelayCommand<Room> OpenAssignmentRoomDetailCommand { get; }
     public RelayCommand<Property> SelectAssignmentPropertyCommand { get; }
     public RelayCommand ShowAllAssignmentPropertiesCommand { get; }
+    public RelayCommand EndSelectedAssignmentRoomCommand { get; }
+    public RelayCommand ConfirmTransferRoomCommand { get; }
+    public RelayCommand CloseTransferRoomDrawerCommand { get; }
     public RelayCommand ClearAssignmentHistoryFiltersCommand { get; }
     public RelayCommand AddRoomsRangeCommand { get; }
     // Drawer commands
@@ -1102,7 +1159,8 @@ public class MainViewModel : ViewModelBase
     public bool IsAssignmentDrawerOpen { get => _isAssignmentDrawerOpen; set { if (SetProperty(ref _isAssignmentDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsAssignmentHistoryDrawerOpen { get => _isAssignmentHistoryDrawerOpen; set { if (SetProperty(ref _isAssignmentHistoryDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsAssignmentRoomDetailDrawerOpen { get => _isAssignmentRoomDetailDrawerOpen; set { if (SetProperty(ref _isAssignmentRoomDetailDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
-    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen || IsAssignmentDrawerOpen || IsAssignmentHistoryDrawerOpen || IsAssignmentRoomDetailDrawerOpen;
+    public bool IsTransferRoomDrawerOpen { get => _isTransferRoomDrawerOpen; set { if (SetProperty(ref _isTransferRoomDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen || IsAssignmentDrawerOpen || IsAssignmentHistoryDrawerOpen || IsAssignmentRoomDetailDrawerOpen || IsTransferRoomDrawerOpen;
 
     public bool AssignmentShowFormerTenants
     {
@@ -1166,6 +1224,7 @@ public class MainViewModel : ViewModelBase
         _tenantService.SyncStatusesFromAssignments();
         Replace(Tenants, _tenantService.GetAll());
         Replace(RoomTenants, _roomTenantService.GetAll());
+        RefreshAssignmentFilterRoomOptions();
         RefreshTenantStatusCollections();
         RefreshAssignmentTenantOptions();
         Replace(FeeTypes, _feeTypeService.GetAll());
@@ -1186,6 +1245,7 @@ public class MainViewModel : ViewModelBase
         _assignmentFilterPropertyId = 0;
         _assignmentFilterRoomId = 0;
         _assignmentRoomSearch = string.Empty;
+        _assignmentVacantOnly = false;
         _assignmentNewPropertyId = 0;
         _assignmentHistoryPropertyId = 0;
         _assignmentHistoryRoomId = 0;
@@ -1197,10 +1257,17 @@ public class MainViewModel : ViewModelBase
         NewRoomTenant = new RoomTenant();
         IsAssignmentDrawerOpen = false;
         IsAssignmentHistoryDrawerOpen = false;
+        IsTransferRoomDrawerOpen = false;
+        _transferAssignment = null;
+        _transferPropertyId = 0;
+        _transferRoomId = 0;
+        _transferMoveDate = DateTime.Today;
+        _transferIsRepresentative = false;
 
         OnPropertyChanged(nameof(AssignmentFilterPropertyId));
         OnPropertyChanged(nameof(AssignmentFilterRoomId));
         OnPropertyChanged(nameof(AssignmentRoomSearch));
+        OnPropertyChanged(nameof(AssignmentVacantOnly));
         OnPropertyChanged(nameof(AssignmentNewPropertyId));
         OnPropertyChanged(nameof(AssignmentHistoryPropertyId));
         OnPropertyChanged(nameof(AssignmentHistoryRoomId));
@@ -1213,6 +1280,12 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(AssignmentStartDate));
         OnPropertyChanged(nameof(AssignmentRoomId));
         OnPropertyChanged(nameof(SelectedAssignmentRoomText));
+        OnPropertyChanged(nameof(TransferTenantName));
+        OnPropertyChanged(nameof(TransferCurrentRoomText));
+        OnPropertyChanged(nameof(TransferPropertyId));
+        OnPropertyChanged(nameof(TransferRoomId));
+        OnPropertyChanged(nameof(TransferMoveDate));
+        OnPropertyChanged(nameof(TransferIsRepresentative));
     }
 
     private void LoadDashboard()
@@ -1505,8 +1578,7 @@ public class MainViewModel : ViewModelBase
 
         if (SelectedAssignmentTenant is null ||
             NewRoomTenant.TenantId <= 0 ||
-            SelectedAssignmentTenant.Id != NewRoomTenant.TenantId ||
-            !string.Equals(AssignmentTenantSearchText, SelectedAssignmentTenant.AssignmentDisplayText, StringComparison.CurrentCulture))
+            SelectedAssignmentTenant.Id != NewRoomTenant.TenantId)
         {
             throw new ValidationException("Vui lòng chọn người thuê hợp lệ.");
         }
@@ -1526,8 +1598,9 @@ public class MainViewModel : ViewModelBase
     {
         if (assignment is null) throw new ValidationException("Chọn lượt thuê trước.");
         var roomId = assignment.RoomId;
+        var detailRoomId = IsAssignmentRoomDetailDrawerOpen ? SelectedAssignmentRoom?.Id : null;
         _roomTenantService.EndAssignment(assignment.Id, AssignmentEndDate);
-        Load();
+        ReloadAfterAssignmentChange(detailRoomId);
         StatusMessage = RoomNeedsRepresentative(roomId)
             ? "Đã kết thúc thuê. Phòng này chưa có người đại diện."
             : "Đã kết thúc thuê.";
@@ -1536,27 +1609,124 @@ public class MainViewModel : ViewModelBase
     private void ChangeRoom(RoomTenant? assignment)
     {
         if (assignment is null) throw new ValidationException("Chọn lượt thuê trước.");
-        var dialog = new RoomTransferDialog(assignment, Properties, Rooms)
-        {
-            Owner = Application.Current.MainWindow
-        };
+        _transferAssignment = assignment;
+        _transferMoveDate = DateTime.Today;
+        _transferIsRepresentative = false;
+        _transferPropertyId = assignment.Room?.PropertyId
+            ?? Rooms.FirstOrDefault(x => x.Id == assignment.RoomId)?.PropertyId
+            ?? 0;
+        _transferRoomId = 0;
 
-        if (dialog.ShowDialog() != true)
-        {
-            return;
-        }
+        OnPropertyChanged(nameof(TransferTenantName));
+        OnPropertyChanged(nameof(TransferCurrentRoomText));
+        OnPropertyChanged(nameof(TransferMoveDate));
+        OnPropertyChanged(nameof(TransferIsRepresentative));
+        OnPropertyChanged(nameof(TransferPropertyId));
+        OnPropertyChanged(nameof(TransferRoomId));
 
-        _roomTenantService.ChangeRoom(assignment.Id, dialog.TargetRoomId, dialog.MoveDate, dialog.IsRepresentative);
-        Load();
-        StatusMessage = "Đã chuyển phòng thành công.";
+        RefreshTransferRoomOptions();
+        IsTransferRoomDrawerOpen = true;
     }
 
     private void SetRepresentative(RoomTenant? assignment)
     {
         if (assignment is null) throw new ValidationException("Chọn lượt thuê trước.");
+        var detailRoomId = IsAssignmentRoomDetailDrawerOpen ? SelectedAssignmentRoom?.Id : null;
         _roomTenantService.SetRepresentative(assignment.Id);
         StatusMessage = "Đã đặt người đại diện.";
+        ReloadAfterAssignmentChange(detailRoomId);
+    }
+
+    private void EndSelectedAssignmentRoom()
+    {
+        if (SelectedAssignmentRoom is null)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
+
+        var roomId = SelectedAssignmentRoom.Id;
+        var activeAssignments = RoomTenants
+            .Where(x => x.RoomId == roomId && x.Status == RoomTenantStatus.Active)
+            .ToList();
+
+        if (activeAssignments.Count == 0)
+        {
+            throw new ValidationException("Phòng này chưa có người thuê.");
+        }
+
+        var confirm = MessageBox.Show(
+            "Bạn có chắc muốn kết thúc thuê cho tất cả người thuê trong phòng này không?",
+            "Kết thúc thuê cả phòng",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        foreach (var assignment in activeAssignments)
+        {
+            _roomTenantService.EndAssignment(assignment.Id, DateTime.Today);
+        }
+
+        ReloadAfterAssignmentChange(roomId);
+        StatusMessage = "Đã kết thúc thuê cho tất cả người thuê trong phòng.";
+    }
+
+    private void ConfirmTransferRoom()
+    {
+        if (_transferAssignment is null)
+        {
+            throw new ValidationException("Chọn lượt thuê trước.");
+        }
+
+        if (TransferPropertyId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn nhà / khu trọ.");
+        }
+
+        if (TransferRoomId <= 0)
+        {
+            throw new ValidationException("Vui lòng chọn phòng.");
+        }
+
+        if (TransferRoomId == _transferAssignment.RoomId)
+        {
+            throw new ValidationException("Phòng mới phải khác phòng hiện tại.");
+        }
+
+        var detailRoomId = IsAssignmentRoomDetailDrawerOpen ? SelectedAssignmentRoom?.Id : null;
+        _roomTenantService.ChangeRoom(_transferAssignment.Id, TransferRoomId, TransferMoveDate, TransferIsRepresentative);
+        IsTransferRoomDrawerOpen = false;
+        _transferAssignment = null;
+        ReloadAfterAssignmentChange(detailRoomId);
+        StatusMessage = "Đã chuyển phòng thành công.";
+    }
+
+    private void CloseTransferRoomDrawer()
+    {
+        IsTransferRoomDrawerOpen = false;
+        _transferAssignment = null;
+    }
+
+    private void ReloadAfterAssignmentChange(int? detailRoomId)
+    {
+        var propertyId = AssignmentFilterPropertyId;
+        var roomSearch = AssignmentRoomSearch;
+        var vacantOnly = AssignmentVacantOnly;
+        var shouldKeepDetailOpen = detailRoomId.HasValue && IsAssignmentRoomDetailDrawerOpen;
+
         Load();
+
+        AssignmentFilterPropertyId = propertyId;
+        AssignmentRoomSearch = roomSearch;
+        AssignmentVacantOnly = vacantOnly;
+
+        if (shouldKeepDetailOpen)
+        {
+            RefreshSelectedAssignmentRoomDetail(detailRoomId.GetValueOrDefault());
+        }
     }
 
     private void AddFeeType()
@@ -2006,6 +2176,31 @@ public class MainViewModel : ViewModelBase
         }
     }
 
+    private void RefreshTransferRoomOptions()
+    {
+        var rooms = TransferPropertyId <= 0
+            ? new List<Room>()
+            : Rooms
+                .Where(x => x.Status is RoomStatus.Occupied or RoomStatus.Vacant)
+                .Where(x => x.PropertyId == TransferPropertyId)
+                .OrderBy(x => x.RoomName)
+                .ToList();
+
+        Replace(TransferRoomOptions, rooms);
+
+        if (TransferRoomId > 0 && rooms.All(x => x.Id != TransferRoomId))
+        {
+            TransferRoomId = 0;
+        }
+
+        if (TransferRoomId <= 0)
+        {
+            var defaultRoom = rooms.FirstOrDefault(x => _transferAssignment is null || x.Id != _transferAssignment.RoomId)
+                ?? rooms.FirstOrDefault();
+            TransferRoomId = defaultRoom?.Id ?? 0;
+        }
+    }
+
     private void RefreshAssignmentTenantOptions()
     {
         var text = AssignmentTenantSearchText.Trim();
@@ -2392,6 +2587,7 @@ public class MainViewModel : ViewModelBase
         IsAssignmentDrawerOpen = false;
         IsAssignmentHistoryDrawerOpen = false;
         IsAssignmentRoomDetailDrawerOpen = false;
+        IsTransferRoomDrawerOpen = false;
     }
 
     private void OpenAssignmentDrawer()
@@ -2437,13 +2633,31 @@ public class MainViewModel : ViewModelBase
             return;
         }
 
+        RefreshSelectedAssignmentRoomDetail(room.Id);
+        IsAssignmentRoomDetailDrawerOpen = true;
+    }
+
+    private void RefreshSelectedAssignmentRoomDetail(int roomId)
+    {
+        var room = Rooms.FirstOrDefault(x => x.Id == roomId);
+        if (room is null)
+        {
+            SelectedAssignmentRoom = null;
+            Replace(SelectedAssignmentRoomTenants, Array.Empty<RoomTenant>());
+            OnPropertyChanged(nameof(HasSelectedAssignmentRoomTenants));
+            OnPropertyChanged(nameof(HasNoSelectedAssignmentRoomTenants));
+            return;
+        }
+
         SelectedAssignmentRoom = room;
-        var activeTenants = room.ActiveRoomTenants
+        var activeTenants = RoomTenants
+            .Where(x => x.RoomId == room.Id && x.Status == RoomTenantStatus.Active)
             .OrderByDescending(x => x.IsRepresentative)
             .ThenBy(x => x.TenantName)
             .ToList();
         Replace(SelectedAssignmentRoomTenants, activeTenants);
-        IsAssignmentRoomDetailDrawerOpen = true;
+        OnPropertyChanged(nameof(HasSelectedAssignmentRoomTenants));
+        OnPropertyChanged(nameof(HasNoSelectedAssignmentRoomTenants));
     }
 
     private void OpenAssignmentHistoryDrawer()
@@ -2492,6 +2706,11 @@ public class MainViewModel : ViewModelBase
         if (!string.IsNullOrWhiteSpace(search))
         {
             rooms = rooms.Where(x => Contains(x.RoomName, search) || Contains(x.PropertyName, search));
+        }
+
+        if (AssignmentVacantOnly)
+        {
+            rooms = rooms.Where(x => !RoomTenants.Any(rt => rt.RoomId == x.Id && rt.Status == RoomTenantStatus.Active));
         }
 
         var filteredRooms = rooms
