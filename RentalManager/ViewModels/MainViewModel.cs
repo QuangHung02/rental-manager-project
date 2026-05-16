@@ -87,6 +87,7 @@ public class MainViewModel : ViewModelBase
     private string _assignmentHistoryTenantSearch = string.Empty;
     private string _assignmentTenantSearchText = string.Empty;
     private Tenant? _selectedAssignmentTenant;
+    private bool _isAssignmentTenantDropdownOpen;
     private bool _isUpdatingAssignmentTenantText;
     private DateTime _assignmentEndDate = DateTime.Today;
     // Bulk room creation
@@ -105,6 +106,8 @@ public class MainViewModel : ViewModelBase
     private bool _isAssignmentHistoryDrawerOpen;
     private bool _isAssignmentRoomDetailDrawerOpen;
     private bool _isTransferRoomDrawerOpen;
+    private bool _isInvoiceGenerationDrawerOpen;
+    private bool _isPaymentDrawerOpen;
     private Room? _selectedAssignmentRoom;
     private bool _assignmentShowFormerTenants;
     private RoomTenant? _transferAssignment;
@@ -112,6 +115,7 @@ public class MainViewModel : ViewModelBase
     private int _transferRoomId;
     private DateTime _transferMoveDate = DateTime.Today;
     private bool _transferIsRepresentative;
+    private string _invoiceGenerationSummaryText = string.Empty;
 
     public MainViewModel()
     {
@@ -143,6 +147,8 @@ public class MainViewModel : ViewModelBase
         GenerateInvoiceCommand = new RelayCommand(() => Run(GenerateInvoice));
         GenerateAllInvoicesCommand = new RelayCommand(() => Run(GenerateAllInvoices));
         GenerateReadyInvoicesCommand = new RelayCommand(() => Run(GenerateReadyInvoices));
+        OpenInvoiceGenerationDrawerCommand = new RelayCommand(OpenInvoiceGenerationDrawer);
+        OpenPaymentDrawerCommand = new RelayCommand(() => Run(() => OpenPaymentDrawer(SelectedInvoice)));
         IssueInvoiceCommand = new RelayCommand(() => Run(IssueInvoice), () => SelectedInvoice is not null);
         RecordPaymentCommand = new RelayCommand(() => Run(RecordPayment), () => SelectedInvoice is not null && SelectedInvoice.RemainingAmount > 0);
         FillRemainingPaymentCommand = new RelayCommand(FillRemainingPayment, () => SelectedInvoice is not null && SelectedInvoice.RemainingAmount > 0);
@@ -166,6 +172,7 @@ public class MainViewModel : ViewModelBase
         ConfirmTransferRoomCommand = new RelayCommand(() => Run(ConfirmTransferRoom));
         CloseTransferRoomDrawerCommand = new RelayCommand(CloseTransferRoomDrawer);
         ClearAssignmentHistoryFiltersCommand = new RelayCommand(ClearAssignmentHistoryFilters);
+        SelectAssignmentTenantCommand = new RelayCommand<Tenant>(SelectAssignmentTenant);
         AddRoomsRangeCommand = new RelayCommand(() => Run(AddRoomsRange));
         OpenAddPropertyDrawerCommand = new RelayCommand(() => { CancelPropertyEdit(); IsPropertyDrawerOpen = true; });
         OpenAddRoomDrawerCommand    = new RelayCommand(() => { CancelRoomEdit();     IsRoomDrawerOpen     = true; });
@@ -192,7 +199,7 @@ public class MainViewModel : ViewModelBase
         EditRoomFeeRowCommand = new RelayCommand<RoomFeeConfig>(config => Run(() => { SelectedRoomFeeConfig = config; EditRoomFeeConfig(); }));
         DisableRoomFeeRowCommand = new RelayCommand<RoomFeeConfig>(config => Run(() => { SelectedRoomFeeConfig = config; DisableRoomFeeConfig(); }));
         SelectInvoiceRowCommand = new RelayCommand<Invoice>(invoice => { SelectedInvoice = invoice; });
-        PayInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => SelectInvoiceForPayment(invoice)));
+        PayInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => OpenPaymentDrawer(invoice)));
         IssueInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => { SelectedInvoice = invoice; IssueInvoice(); }));
         CopyInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => { SelectedInvoice = invoice; CopyInvoice(); }));
         CancelInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => { SelectedInvoice = invoice; CancelInvoice(); }));
@@ -243,6 +250,7 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<Payment> Payments { get; } = new();
     public ObservableCollection<Payment> FilteredPayments { get; } = new();
     public ObservableCollection<InvoiceReadinessRow> InvoiceReadinessRows { get; } = new();
+    public ObservableCollection<InvoiceGenerationSkipRow> InvoiceGenerationSkippedRooms { get; } = new();
     public ObservableCollection<InvoiceItem> SelectedInvoiceItems { get; } = new();
     public ObservableCollection<Payment> SelectedInvoicePayments { get; } = new();
 
@@ -265,6 +273,11 @@ public class MainViewModel : ViewModelBase
     }
     public PaymentMethod NewPaymentMethod { get; set; } = PaymentMethod.Cash;
     public string? NewPaymentNote { get; set; }
+    public string InvoiceGenerationSummaryText
+    {
+        get => _invoiceGenerationSummaryText;
+        set => SetProperty(ref _invoiceGenerationSummaryText, value);
+    }
 
     public IReadOnlyList<string> DashboardRangeOptions { get; } = new[] { "Tháng hiện tại", "3 tháng gần nhất", "6 tháng gần nhất", "Năm hiện tại", "Tùy chọn tháng" };
     public IReadOnlyList<int> MonthOptions { get; } = Enumerable.Range(1, 12).ToList();
@@ -369,7 +382,7 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedInvoice, value))
             {
-                Replace(SelectedInvoiceItems, value?.Items ?? Enumerable.Empty<InvoiceItem>());
+                Replace(SelectedInvoiceItems, value?.Items.Select(ToDisplayInvoiceItem) ?? Enumerable.Empty<InvoiceItem>());
                 Replace(SelectedInvoicePayments, value?.Payments ?? Enumerable.Empty<Payment>());
                 if (value is null || value.RemainingAmount <= 0)
                 {
@@ -383,6 +396,8 @@ public class MainViewModel : ViewModelBase
                 }
 
                 OnPropertyChanged(nameof(SelectedInvoiceSummary));
+                OnPropertyChanged(nameof(SelectedInvoiceRoomText));
+                OnPropertyChanged(nameof(SelectedInvoiceRepresentativeText));
                 RaiseCommandStates();
             }
         }
@@ -529,8 +544,9 @@ public class MainViewModel : ViewModelBase
                     return;
                 }
 
-                RefreshAssignmentTenantOptions();
                 ClearAssignmentTenantSelectionIfTextNoLongerMatches();
+                RefreshAssignmentTenantOptions();
+                IsAssignmentTenantDropdownOpen = IsAssignmentDrawerOpen;
             }
         }
     }
@@ -1091,6 +1107,12 @@ public class MainViewModel : ViewModelBase
         ? "Chưa chọn hóa đơn"
         : $"{SelectedInvoice.RoomName} - {SelectedInvoice.RepresentativeTenantName} | Tổng: {SelectedInvoice.TotalAmount:N0} | Đã thu: {SelectedInvoice.PaidAmount:N0} | Còn lại: {SelectedInvoice.RemainingAmount:N0}";
 
+    public string SelectedInvoiceRoomText => SelectedInvoice is null
+        ? string.Empty
+        : $"{SelectedInvoice.PropertyName} - {SelectedInvoice.RoomName}";
+
+    public string SelectedInvoiceRepresentativeText => SelectedInvoice?.RepresentativeTenantName ?? string.Empty;
+
     public RelayCommand AddPropertyCommand { get; }
     public RelayCommand SavePropertyCommand { get; }
     public RelayCommand EditPropertyCommand { get; }
@@ -1118,9 +1140,11 @@ public class MainViewModel : ViewModelBase
     public RelayCommand GenerateInvoiceCommand { get; }
     public RelayCommand GenerateAllInvoicesCommand { get; }
     public RelayCommand GenerateReadyInvoicesCommand { get; }
+    public RelayCommand OpenInvoiceGenerationDrawerCommand { get; }
     public RelayCommand IssueInvoiceCommand { get; }
     public RelayCommand RecordPaymentCommand { get; }
     public RelayCommand FillRemainingPaymentCommand { get; }
+    public RelayCommand OpenPaymentDrawerCommand { get; }
     public RelayCommand CopyInvoiceCommand { get; }
     public RelayCommand CancelInvoiceCommand { get; }
     public RelayCommand BackupCommand { get; }
@@ -1140,6 +1164,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand ConfirmTransferRoomCommand { get; }
     public RelayCommand CloseTransferRoomDrawerCommand { get; }
     public RelayCommand ClearAssignmentHistoryFiltersCommand { get; }
+    public RelayCommand<Tenant> SelectAssignmentTenantCommand { get; }
     public RelayCommand AddRoomsRangeCommand { get; }
     // Drawer commands
     public RelayCommand OpenAddPropertyDrawerCommand  { get; }
@@ -1160,7 +1185,15 @@ public class MainViewModel : ViewModelBase
     public bool IsAssignmentHistoryDrawerOpen { get => _isAssignmentHistoryDrawerOpen; set { if (SetProperty(ref _isAssignmentHistoryDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsAssignmentRoomDetailDrawerOpen { get => _isAssignmentRoomDetailDrawerOpen; set { if (SetProperty(ref _isAssignmentRoomDetailDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsTransferRoomDrawerOpen { get => _isTransferRoomDrawerOpen; set { if (SetProperty(ref _isTransferRoomDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
-    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen || IsAssignmentDrawerOpen || IsAssignmentHistoryDrawerOpen || IsAssignmentRoomDetailDrawerOpen || IsTransferRoomDrawerOpen;
+    public bool IsInvoiceGenerationDrawerOpen { get => _isInvoiceGenerationDrawerOpen; set { if (SetProperty(ref _isInvoiceGenerationDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsPaymentDrawerOpen { get => _isPaymentDrawerOpen; set { if (SetProperty(ref _isPaymentDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen || IsAssignmentDrawerOpen || IsAssignmentHistoryDrawerOpen || IsAssignmentRoomDetailDrawerOpen || IsTransferRoomDrawerOpen || IsInvoiceGenerationDrawerOpen || IsPaymentDrawerOpen;
+
+    public bool IsAssignmentTenantDropdownOpen
+    {
+        get => _isAssignmentTenantDropdownOpen;
+        set => SetProperty(ref _isAssignmentTenantDropdownOpen, value);
+    }
 
     public bool AssignmentShowFormerTenants
     {
@@ -1252,12 +1285,15 @@ public class MainViewModel : ViewModelBase
         _assignmentHistoryTenantSearch = string.Empty;
         _assignmentTenantSearchText = string.Empty;
         _selectedAssignmentTenant = null;
+        _isAssignmentTenantDropdownOpen = false;
         _assignmentShowFormerTenants = false;
         _assignmentHistoryFilter = "Đã kết thúc";
         NewRoomTenant = new RoomTenant();
         IsAssignmentDrawerOpen = false;
         IsAssignmentHistoryDrawerOpen = false;
         IsTransferRoomDrawerOpen = false;
+        IsInvoiceGenerationDrawerOpen = false;
+        IsPaymentDrawerOpen = false;
         _transferAssignment = null;
         _transferPropertyId = 0;
         _transferRoomId = 0;
@@ -1274,6 +1310,7 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(AssignmentHistoryTenantSearch));
         OnPropertyChanged(nameof(AssignmentTenantSearchText));
         OnPropertyChanged(nameof(SelectedAssignmentTenant));
+        OnPropertyChanged(nameof(IsAssignmentTenantDropdownOpen));
         OnPropertyChanged(nameof(AssignmentShowFormerTenants));
         OnPropertyChanged(nameof(AssignmentHistoryFilter));
         OnPropertyChanged(nameof(NewRoomTenant));
@@ -1878,19 +1915,37 @@ public class MainViewModel : ViewModelBase
 
         _invoiceService.Generate(InvoiceRoomId, BillingMonth);
         Load();
+        IsInvoiceGenerationDrawerOpen = true;
+        RefreshInvoiceGenerationReadiness();
+        InvoiceGenerationSummaryText = "Đã tạo hóa đơn cho phòng đã chọn.";
     }
 
     private void GenerateAllInvoices()
     {
-        _invoiceService.GenerateAll(BillingMonth);
+        var result = _invoiceService.GenerateAllEligible(BillingMonth);
         Load();
+        IsInvoiceGenerationDrawerOpen = true;
+        RefreshInvoiceGenerationReadiness();
+        InvoiceGenerationSummaryText = result.SummaryText;
+        Replace(InvoiceGenerationSkippedRooms, result.SkippedRooms);
     }
 
     private void GenerateReadyInvoices()
     {
-        var count = _invoiceService.GenerateReady(BillingMonth);
-        StatusMessage = $"Đã tạo {count} hóa đơn đủ dữ liệu.";
-        Load();
+        GenerateAllInvoices();
+    }
+
+    private void OpenInvoiceGenerationDrawer()
+    {
+        RefreshInvoiceGenerationReadiness();
+        InvoiceGenerationSummaryText = string.Empty;
+        Replace(InvoiceGenerationSkippedRooms, Array.Empty<InvoiceGenerationSkipRow>());
+        IsInvoiceGenerationDrawerOpen = true;
+    }
+
+    private void RefreshInvoiceGenerationReadiness()
+    {
+        Replace(InvoiceReadinessRows, _invoiceService.GetReadiness(BillingMonth));
     }
 
     private void IssueInvoice()
@@ -1920,6 +1975,7 @@ public class MainViewModel : ViewModelBase
         Load();
         SelectedInvoice = null;
         SelectedInvoice = Invoices.FirstOrDefault(x => x.Id == invoiceId);
+        IsPaymentDrawerOpen = false;
         StatusMessage = "Đã ghi nhận thanh toán.";
     }
 
@@ -1939,6 +1995,11 @@ public class MainViewModel : ViewModelBase
 
     private void SelectInvoiceForPayment(Invoice? invoice)
     {
+        OpenPaymentDrawer(invoice);
+    }
+
+    private void OpenPaymentDrawer(Invoice? invoice)
+    {
         if (invoice is null)
         {
             return;
@@ -1954,6 +2015,7 @@ public class MainViewModel : ViewModelBase
         NewPaymentAmount = invoice.RemainingAmount;
         NewPaymentMethod = PaymentMethod.Cash;
         OnPropertyChanged(nameof(NewPaymentMethod));
+        IsPaymentDrawerOpen = true;
     }
 
     private void CopyInvoice()
@@ -2250,6 +2312,42 @@ public class MainViewModel : ViewModelBase
         AssignmentHistoryRoomId = 0;
         AssignmentHistoryTenantSearch = string.Empty;
         RefreshAssignmentHistoryFilters();
+    }
+
+    private void SelectAssignmentTenant(Tenant? tenant)
+    {
+        if (tenant is null)
+        {
+            return;
+        }
+
+        if (SelectedAssignmentTenant?.Id == tenant.Id)
+        {
+            SelectedAssignmentTenant = null;
+        }
+
+        SelectedAssignmentTenant = tenant;
+        SetAssignmentTenantSearchText(tenant.AssignmentDisplayText);
+        RefreshAssignmentTenantOptions();
+        IsAssignmentTenantDropdownOpen = false;
+    }
+
+    private static InvoiceItem ToDisplayInvoiceItem(InvoiceItem item)
+    {
+        return new InvoiceItem
+        {
+            Id = item.Id,
+            InvoiceId = item.InvoiceId,
+            FeeTypeId = item.FeeTypeId,
+            FeeType = item.FeeType,
+            ItemName = item.FeeType?.DisplayName ?? DisplayText.FeeName(item.ItemName),
+            CalculationType = item.CalculationType,
+            Quantity = item.Quantity,
+            Unit = item.Unit,
+            UnitPrice = item.UnitPrice,
+            Amount = item.Amount,
+            Note = item.Note
+        };
     }
 
     private void SetAssignmentTenantSearchText(string text)
@@ -2588,6 +2686,9 @@ public class MainViewModel : ViewModelBase
         IsAssignmentHistoryDrawerOpen = false;
         IsAssignmentRoomDetailDrawerOpen = false;
         IsTransferRoomDrawerOpen = false;
+        IsInvoiceGenerationDrawerOpen = false;
+        IsPaymentDrawerOpen = false;
+        IsAssignmentTenantDropdownOpen = false;
     }
 
     private void OpenAssignmentDrawer()
@@ -2617,6 +2718,7 @@ public class MainViewModel : ViewModelBase
         AssignmentShowFormerTenants = false;
         SelectedAssignmentTenant = null;
         SetAssignmentTenantSearchText(string.Empty);
+        IsAssignmentTenantDropdownOpen = false;
         RefreshAssignmentRoomOptions();
         RefreshAssignmentTenantOptions();
         OnPropertyChanged(nameof(NewRoomTenant));

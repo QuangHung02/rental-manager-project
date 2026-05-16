@@ -57,20 +57,53 @@ public class InvoiceService
 
     public void GenerateAll(string billingMonth)
     {
+        GenerateAllEligible(billingMonth);
+    }
+
+    public InvoiceGenerationResult GenerateAllEligible(string billingMonth)
+    {
         using var db = DbContextFactory.Create();
-        var roomIds = db.Rooms.Where(x => x.Status != RoomStatus.Inactive).Select(x => x.Id).ToList();
-        foreach (var roomId in roomIds)
+        var result = new InvoiceGenerationResult();
+        var rooms = db.Rooms
+            .Include(x => x.Property)
+            .Where(x => x.Status != RoomStatus.Inactive)
+            .OrderBy(x => x.Property!.Name)
+            .ThenBy(x => x.RoomName)
+            .ToList();
+
+        foreach (var room in rooms)
         {
-            if (!db.Invoices.Any(x => x.RoomId == roomId && x.BillingMonth == billingMonth))
+            var reason = GetSkipReason(db, room.Id, billingMonth);
+            if (reason is not null)
             {
-                EnsureRoomHasRepresentativeIfOccupied(db, roomId);
-                EnsureMeterReadingsPresent(db, roomId, billingMonth);
-                var invoice = _calculationService.BuildDraftInvoice(roomId, billingMonth);
+                result.SkippedRooms.Add(new InvoiceGenerationSkipRow
+                {
+                    PropertyName = room.Property?.Name ?? string.Empty,
+                    RoomName = room.RoomName,
+                    Reason = reason
+                });
+                continue;
+            }
+
+            try
+            {
+                var invoice = _calculationService.BuildDraftInvoice(room.Id, billingMonth);
                 db.Invoices.Add(invoice);
+                result.CreatedCount++;
+            }
+            catch (ValidationException ex)
+            {
+                result.SkippedRooms.Add(new InvoiceGenerationSkipRow
+                {
+                    PropertyName = room.Property?.Name ?? string.Empty,
+                    RoomName = room.RoomName,
+                    Reason = ex.Message
+                });
             }
         }
 
         db.SaveChanges();
+        return result;
     }
 
     public List<InvoiceReadinessRow> GetReadiness(string billingMonth)
@@ -86,14 +119,7 @@ public class InvoiceService
 
         return rooms.Select(room =>
         {
-            var hasInvoice = db.Invoices.Any(x => x.RoomId == room.Id && x.BillingMonth == billingMonth);
-            var missingRepresentative = room.Status == RoomStatus.Occupied && !db.RoomTenants.Any(x => x.RoomId == room.Id && x.Status == RoomTenantStatus.Active && x.IsRepresentative);
-            var meterConfigs = db.RoomFeeConfigs
-                .Include(x => x.FeeType)
-                .Where(x => x.RoomId == room.Id && x.Enabled && x.FeeType!.IsActive && x.CalculationType == CalculationType.Meter)
-                .ToList();
-            var missingReading = meterConfigs.Any(config => !db.MeterReadings.Any(r => r.RoomId == room.Id && r.FeeTypeId == config.FeeTypeId && r.BillingMonth == billingMonth));
-            var status = hasInvoice ? "Đã có hóa đơn" : missingRepresentative ? "Chưa có người đại diện" : missingReading ? "Thiếu chỉ số" : "Đủ dữ liệu";
+            var status = GetSkipReason(db, room.Id, billingMonth) ?? "Đủ dữ liệu";
 
             return new InvoiceReadinessRow
             {
@@ -198,6 +224,41 @@ public class InvoiceService
         {
             throw new ValidationException("Phòng này chưa có người đại diện. Vui lòng chọn người đại diện trước khi tạo hóa đơn.");
         }
+    }
+
+    private static string? GetSkipReason(RentalManagerDbContext db, int roomId, string billingMonth)
+    {
+        if (db.Invoices.Any(x => x.RoomId == roomId && x.BillingMonth == billingMonth))
+        {
+            return "Đã có hóa đơn tháng này";
+        }
+
+        var hasActiveTenant = db.RoomTenants.Any(x => x.RoomId == roomId && x.Status == RoomTenantStatus.Active);
+        if (!hasActiveTenant)
+        {
+            return "Phòng chưa có người thuê";
+        }
+
+        var hasRepresentative = db.RoomTenants.Any(x => x.RoomId == roomId && x.Status == RoomTenantStatus.Active && x.IsRepresentative);
+        if (!hasRepresentative)
+        {
+            return "Chưa có người đại diện/liên hệ chính";
+        }
+
+        var missingMeterReadingExists = db.RoomFeeConfigs
+            .Include(x => x.FeeType)
+            .Where(x => x.RoomId == roomId && x.Enabled && x.FeeType!.IsActive && x.CalculationType == CalculationType.Meter)
+            .Any(config => !db.MeterReadings.Any(reading =>
+                reading.RoomId == roomId &&
+                reading.FeeTypeId == config.FeeTypeId &&
+                reading.BillingMonth == billingMonth));
+
+        if (!missingMeterReadingExists)
+        {
+            return null;
+        }
+
+        return "Thiếu chỉ số";
     }
 
     private static void EnsureMeterReadingsPresent(RentalManagerDbContext db, int roomId, string billingMonth)
