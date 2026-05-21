@@ -1209,7 +1209,8 @@
                         <StackPanel>
                             <TextBlock Text="Thông tin CLI" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
                             <TextBlock Text="- CLI giúp công cụ AI/automation bên ngoài thao tác với dữ liệu của app qua dòng lệnh." TextWrapping="Wrap"/>
-                            <TextBlock Text="- Dữ liệu vẫn lưu trên máy người dùng." TextWrapping="Wrap" Margin="0,0,0,16"/>
+                            <TextBlock Text="- Dữ liệu vẫn lưu trên máy người dùng." TextWrapping="Wrap"/>
+                            <TextBlock Text="- Ứng dụng không tích hợp AI sẵn; CLI chỉ là lớp điều khiển cho công cụ bên ngoài." TextWrapping="Wrap" Margin="0,0,0,16"/>
                             
                             <StackPanel Orientation="Horizontal" Margin="0,4">
                                 <TextBlock Text="Trạng thái CLI: " FontWeight="SemiBold" Width="120"/>

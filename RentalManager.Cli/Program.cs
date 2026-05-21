@@ -19,8 +19,6 @@ class Program
         // Ensure Database is initialized (applies schema if needed)
         DbContextFactory.EnsureDatabase();
         
-        Console.Error.WriteLine($"[DEBUG] Database Path: {DbContextFactory.DatabasePath}");
-
         if (args.Length < 1)
         {
             PrintJson(new
@@ -194,7 +192,11 @@ class Program
     static int FindFeeType(string name)
     {
         using var db = DbContextFactory.Create();
-        var fee = db.FeeTypes.FirstOrDefault(x => x.Name.ToLower() == name.ToLower());
+        var fee = db.FeeTypes
+            .AsEnumerable()
+            .FirstOrDefault(x =>
+                string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(DisplayText.FeeName(x.Name), name, StringComparison.OrdinalIgnoreCase));
         if (fee == null) throw new ValidationException($"Không tìm thấy loại phí: {name}");
         return fee.Id;
     }
@@ -372,9 +374,13 @@ class Program
         db.RoomTenants.Add(roomTenant);
         db.SaveChanges();
 
-        var feeType = new FeeType { Name = "Dien", DefaultCalculationType = CalculationType.Meter, DefaultUnitPrice = 3500, IsActive = true };
-        db.FeeTypes.Add(feeType);
-        db.SaveChanges();
+        var feeType = db.FeeTypes.FirstOrDefault(x => x.Name == "Electricity");
+        if (feeType is null)
+        {
+            feeType = new FeeType { Name = "Electricity", DefaultCalculationType = CalculationType.Meter, DefaultUnit = "kWh", DefaultUnitPrice = 3500, IsActive = true };
+            db.FeeTypes.Add(feeType);
+            db.SaveChanges();
+        }
 
         var roomFee = new RoomFeeConfig { RoomId = room.Id, FeeTypeId = feeType.Id, Enabled = true, CalculationType = CalculationType.Meter };
         db.RoomFeeConfigs.Add(roomFee);

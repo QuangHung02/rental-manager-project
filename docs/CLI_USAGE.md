@@ -27,6 +27,8 @@ Ghi nhận chỉ số điện/nước mới cho một phòng trong tháng nhất
 RentalManager.Cli.exe meter add --property "Nhà A" --room "Phòng 202" --fee "Điện" --month "2026-04" --current 160
 ```
 
+`--fee` chấp nhận cả tên hiển thị trong app, ví dụ `"Điện"`, và tên lưu trong dữ liệu, ví dụ `"Electricity"`.
+
 **JSON Kết quả (Thành công):**
 ```json
 {
@@ -74,6 +76,7 @@ RentalManager.Cli.exe invoice create --property "Nhà A" --room "Phòng 202" --m
   "success": false,
   "code": "MISSING_METER_READING",
   "message": "Phòng này còn thiếu chỉ số điện/nước cho kỳ hóa đơn đã chọn.",
+  "nextAction": "Nhập chỉ số điện/nước cho tháng đang xử lý rồi tạo hóa đơn lại.",
   "details": {
     "room": "Nhà A - Phòng 202",
     "billingMonth": "2026-04"
