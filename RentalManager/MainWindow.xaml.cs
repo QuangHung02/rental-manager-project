@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using RentalManager.DTOs;
 using RentalManager.ViewModels;
 
 namespace RentalManager;
@@ -77,6 +78,16 @@ public partial class MainWindow : Window
     {
         MainTabs.SelectedItem = BillingTab;
         BillingTabs.SelectedItem = InvoicesTab;
+    }
+
+    private void InvoiceReadinessRows_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is MainViewModel viewModel &&
+            sender is DataGrid { SelectedItem: InvoiceReadinessRow row } &&
+            viewModel.SelectInvoiceReadinessRoomCommand.CanExecute(row))
+        {
+            viewModel.SelectInvoiceReadinessRoomCommand.Execute(row);
+        }
     }
 
     private static bool IsDescendantOf(DependencyObject? source, DependencyObject target)

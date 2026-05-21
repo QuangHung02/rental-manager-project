@@ -149,6 +149,7 @@ public class MainViewModel : ViewModelBase
         GenerateAllInvoicesCommand = new RelayCommand(() => Run(GenerateAllInvoices));
         GenerateReadyInvoicesCommand = new RelayCommand(() => Run(GenerateReadyInvoices));
         OpenInvoiceGenerationDrawerCommand = new RelayCommand(OpenInvoiceGenerationDrawer);
+        SelectInvoiceReadinessRoomCommand = new RelayCommand<InvoiceReadinessRow>(SelectInvoiceReadinessRoom);
         OpenPaymentDrawerCommand = new RelayCommand(() => Run(() => OpenPaymentDrawer(SelectedInvoice)), () => CanPayInvoice(SelectedInvoice));
         IssueInvoiceCommand = new RelayCommand(() => Run(IssueInvoice), () => SelectedInvoice is not null);
         RecordPaymentCommand = new RelayCommand(() => Run(RecordPayment), () => CanPayInvoice(SelectedInvoice));
@@ -1149,6 +1150,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand GenerateAllInvoicesCommand { get; }
     public RelayCommand GenerateReadyInvoicesCommand { get; }
     public RelayCommand OpenInvoiceGenerationDrawerCommand { get; }
+    public RelayCommand<InvoiceReadinessRow> SelectInvoiceReadinessRoomCommand { get; }
     public RelayCommand IssueInvoiceCommand { get; }
     public RelayCommand RecordPaymentCommand { get; }
     public RelayCommand FillRemainingPaymentCommand { get; }
@@ -1951,6 +1953,25 @@ public class MainViewModel : ViewModelBase
         InvoiceGenerationSummaryText = string.Empty;
         Replace(InvoiceGenerationSkippedRooms, Array.Empty<InvoiceGenerationSkipRow>());
         IsInvoiceGenerationDrawerOpen = true;
+    }
+
+    private void SelectInvoiceReadinessRoom(InvoiceReadinessRow? row)
+    {
+        if (row is null)
+        {
+            return;
+        }
+
+        var room = Rooms.FirstOrDefault(x => x.Id == row.RoomId);
+        if (room is null)
+        {
+            InvoiceGenerationSummaryText = "Không tìm thấy phòng đã chọn.";
+            return;
+        }
+
+        InvoiceNewPropertyId = room.PropertyId;
+        InvoiceRoomId = room.Id;
+        InvoiceGenerationSummaryText = $"Đã chọn {row.PropertyName} - {row.RoomName}.";
     }
 
     private void RefreshInvoiceGenerationReadiness()
