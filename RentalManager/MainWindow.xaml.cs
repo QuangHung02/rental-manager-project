@@ -73,6 +73,12 @@ public partial class MainWindow : Window
         viewModel.CloseDrawerCommand.Execute(null);
     }
 
+    private void DashboardPaymentButton_Click(object sender, RoutedEventArgs e)
+    {
+        MainTabs.SelectedItem = BillingTab;
+        BillingTabs.SelectedItem = InvoicesTab;
+    }
+
     private static bool IsDescendantOf(DependencyObject? source, DependencyObject target)
     {
         while (source is not null)

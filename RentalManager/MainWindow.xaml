@@ -85,61 +85,99 @@
 
                 <TabControl x:Name="MainTabs" TabStripPlacement="Left" Margin="0,4,0,0" SelectionChanged="TabControl_SelectionChanged">
             <TabItem x:Name="DashboardTab" Header="Tổng quan">
-                <DockPanel Margin="8">
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tổng quan tháng"/>
-                    <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
-                        <WrapPanel>
-                            <StackPanel><TextBlock Text="Tháng"/><ComboBox ItemsSource="{Binding MonthOptions}" SelectedItem="{Binding SelectedBillingMonth}" Width="90"/></StackPanel>
-                            <StackPanel><TextBlock Text="Năm"/><ComboBox ItemsSource="{Binding YearOptions}" SelectedItem="{Binding DashboardYear}" Width="90"/></StackPanel>
-                            <StackPanel><TextBlock Text="Khoảng thời gian"/><ComboBox ItemsSource="{Binding DashboardRangeOptions}" SelectedItem="{Binding DashboardRange}" Width="170"/></StackPanel>
-                            <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding PropertyFilterOptions}" SelectedValue="{Binding DashboardPropertyFilterId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="190"/></StackPanel>
-                            <TextBlock Text="{Binding ActiveDashboardPeriod}" FontWeight="SemiBold" Margin="12,18,4,0"/>
-                        </WrapPanel>
-                    </GroupBox>
-                    <UniformGrid DockPanel.Dock="Top" Rows="1" Columns="6" Margin="8">
-                        <GroupBox Header="Dự kiến thu"><TextBlock Text="{Binding Dashboard.ExpectedRevenue, StringFormat=N0}" FontSize="18"/></GroupBox>
-                        <GroupBox Header="Đã thu"><TextBlock Text="{Binding Dashboard.CollectedAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
-                        <GroupBox Header="Chưa thu"><TextBlock Text="{Binding Dashboard.UnpaidAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
-                        <GroupBox Header="Phòng đang thuê"><TextBlock Text="{Binding Dashboard.OccupiedRoomCount}" FontSize="18"/></GroupBox>
-                        <GroupBox Header="Phòng trống"><TextBlock Text="{Binding Dashboard.VacantRoomCount}" FontSize="18"/></GroupBox>
-                        <GroupBox Header="Hóa đơn chưa trả"><TextBlock Text="{Binding Dashboard.UnpaidInvoiceCount}" FontSize="18"/></GroupBox>
-                    </UniformGrid>
-                    <Border DockPanel.Dock="Top" Margin="10,0,10,4" Padding="8" Background="#fff7df" BorderBrush="#e2bf65" BorderThickness="1">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Có "/>
-                            <TextBlock Text="{Binding Dashboard.MissingReadingCount}" FontWeight="SemiBold"/>
-                            <TextBlock Text=" phòng thiếu chỉ số điện/nước trong tháng này."/>
-                        </StackPanel>
-                    </Border>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-                        <GroupBox Header="Hóa đơn trong tháng" Grid.Column="0">
-                            <DataGrid ItemsSource="{Binding DashboardInvoices}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Tháng" Binding="{Binding BillingMonth}" Width="75"/>
-                                    <DataGridTextColumn Header="Nhà" Binding="{Binding PropertyName}" Width="120"/>
-                                    <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="90"/>
-                                    <DataGridTextColumn Header="Tổng tiền" Binding="{Binding TotalAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
-                                    <DataGridTextColumn Header="Còn lại" Binding="{Binding RemainingAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
-                                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="110"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </GroupBox>
-                        <GroupBox Header="Thanh toán gần đây" Grid.Column="1">
-                            <DataGrid ItemsSource="{Binding DashboardRecentPayments}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Ngày" Binding="{Binding PaymentDate, StringFormat=d}" Width="90"/>
-                                    <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="90"/>
-                                    <DataGridTextColumn Header="Số tiền" Binding="{Binding Amount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
-                                    <DataGridTextColumn Header="Phương thức" Binding="{Binding MethodText}" Width="110"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </GroupBox>
-                    </Grid>
-                </DockPanel>
+                <TabControl TabStripPlacement="Top" SelectionChanged="TabControl_SelectionChanged">
+                    <TabItem Header="Tổng quan tháng">
+                        <DockPanel Margin="8">
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tổng quan tháng"/>
+                            <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
+                                <WrapPanel>
+                                    <StackPanel><TextBlock Text="Tháng"/><ComboBox ItemsSource="{Binding MonthOptions}" SelectedItem="{Binding SelectedBillingMonth}" Width="90"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Năm"/><ComboBox ItemsSource="{Binding YearOptions}" SelectedItem="{Binding DashboardYear}" Width="90"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Khoảng thời gian"/><ComboBox ItemsSource="{Binding DashboardRangeOptions}" SelectedItem="{Binding DashboardRange}" Width="170"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding PropertyFilterOptions}" SelectedValue="{Binding DashboardPropertyFilterId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="190"/></StackPanel>
+                                    <TextBlock Text="{Binding ActiveDashboardPeriod}" FontWeight="SemiBold" Margin="12,18,4,0"/>
+                                </WrapPanel>
+                            </GroupBox>
+                            <UniformGrid DockPanel.Dock="Top" Rows="1" Columns="6" Margin="8">
+                                <GroupBox Header="Dự kiến thu"><TextBlock Text="{Binding Dashboard.ExpectedRevenue, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Đã thu"><TextBlock Text="{Binding Dashboard.CollectedAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Chưa thu"><TextBlock Text="{Binding Dashboard.UnpaidAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Phòng đang thuê"><TextBlock Text="{Binding Dashboard.OccupiedRoomCount}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Phòng trống"><TextBlock Text="{Binding Dashboard.VacantRoomCount}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Hóa đơn còn nợ"><TextBlock Text="{Binding Dashboard.UnpaidInvoiceCount}" FontSize="18"/></GroupBox>
+                            </UniformGrid>
+                            <Border DockPanel.Dock="Top" Margin="10,0,10,4" Padding="8" Background="#fff7df" BorderBrush="#e2bf65" BorderThickness="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Có "/>
+                                    <TextBlock Text="{Binding Dashboard.MissingReadingCount}" FontWeight="SemiBold"/>
+                                    <TextBlock Text=" phòng thiếu chỉ số điện/nước trong tháng đang chọn."/>
+                                </StackPanel>
+                            </Border>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <GroupBox Header="Trạng thái hóa đơn trong tháng" Grid.Column="0">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+                                            <TextBlock Text="Chọn một hóa đơn rồi bấm Ghi nhận thanh toán." VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                            <Button Content="Ghi nhận thanh toán" Command="{Binding OpenPaymentDrawerCommand}" Click="DashboardPaymentButton_Click" Margin="12,0,0,0" Padding="10,0"/>
+                                        </StackPanel>
+                                        <DataGrid ItemsSource="{Binding DashboardInvoices}" SelectedItem="{Binding SelectedInvoice}" SelectionMode="Single">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Tháng" Binding="{Binding BillingMonth}" Width="75"/>
+                                                <DataGridTextColumn Header="Nhà" Binding="{Binding PropertyName}" Width="120"/>
+                                                <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="90"/>
+                                                <DataGridTextColumn Header="Tổng tiền" Binding="{Binding TotalAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
+                                                <DataGridTextColumn Header="Còn lại" Binding="{Binding RemainingAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
+                                                <DataGridTextColumn Header="Trạng thái" Binding="{Binding StatusText}" Width="110"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </DockPanel>
+                                </GroupBox>
+                                <GroupBox Header="Lịch sử thanh toán" Grid.Column="1">
+                                    <DataGrid ItemsSource="{Binding DashboardRecentPayments}">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Ngày" Binding="{Binding PaymentDate, StringFormat=d}" Width="90"/>
+                                            <DataGridTextColumn Header="Phòng" Binding="{Binding RoomName}" Width="90"/>
+                                            <DataGridTextColumn Header="Số tiền" Binding="{Binding Amount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="110"/>
+                                            <DataGridTextColumn Header="Phương thức" Binding="{Binding MethodText}" Width="110"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </GroupBox>
+                            </Grid>
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="Tổng quan năm">
+                        <DockPanel Margin="8">
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tổng quan năm"/>
+                            <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
+                                <WrapPanel>
+                                    <StackPanel><TextBlock Text="Năm"/><ComboBox ItemsSource="{Binding YearOptions}" SelectedItem="{Binding DashboardYear}" Width="90"/></StackPanel>
+                                    <StackPanel><TextBlock Text="Nhà / khu trọ"/><ComboBox ItemsSource="{Binding PropertyFilterOptions}" SelectedValue="{Binding DashboardPropertyFilterId}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="190"/></StackPanel>
+                                </WrapPanel>
+                            </GroupBox>
+                            <UniformGrid DockPanel.Dock="Top" Rows="1" Columns="4" Margin="8">
+                                <GroupBox Header="Dự kiến thu năm"><TextBlock Text="{Binding YearlyDashboard.ExpectedRevenue, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Đã thu năm"><TextBlock Text="{Binding YearlyDashboard.CollectedAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Chưa thu năm"><TextBlock Text="{Binding YearlyDashboard.UnpaidAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Hóa đơn còn nợ"><TextBlock Text="{Binding YearlyDashboard.UnpaidInvoiceCount}" FontSize="18"/></GroupBox>
+                            </UniformGrid>
+                            <GroupBox Header="Tổng hợp theo tháng">
+                                <DataGrid ItemsSource="{Binding DashboardMonthlySummaries}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Tháng" Binding="{Binding BillingMonth}" Width="90"/>
+                                        <DataGridTextColumn Header="Dự kiến thu" Binding="{Binding ExpectedRevenue, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="130"/>
+                                        <DataGridTextColumn Header="Đã thu" Binding="{Binding CollectedAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="130"/>
+                                        <DataGridTextColumn Header="Chưa thu" Binding="{Binding UnpaidAmount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="130"/>
+                                        <DataGridTextColumn Header="Hóa đơn còn nợ" Binding="{Binding UnpaidInvoiceCount}" ElementStyle="{StaticResource RightCell}" Width="130"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </GroupBox>
+                        </DockPanel>
+                    </TabItem>
+                </TabControl>
             </TabItem>
                                                 <TabItem Header="Nhà &amp; Phòng">
                 <!-- Internal toggle: Quản lý phòng | Danh mục khoản phí -->
@@ -894,9 +932,9 @@
                     </Border>
                 </Grid>
             </TabItem>
-            <TabItem Header="Thu tiền tháng này">
+            <TabItem x:Name="BillingTab" Header="Thu tiền tháng này">
                 <Grid>
-                <TabControl TabStripPlacement="Top" SelectionChanged="TabControl_SelectionChanged">
+                <TabControl x:Name="BillingTabs" TabStripPlacement="Top" SelectionChanged="TabControl_SelectionChanged">
             <TabItem x:Name="MeterReadingsTab" Header="Chỉ số điện / nước">
                 <DockPanel Margin="8">
                     <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
@@ -1166,9 +1204,9 @@
                     
                     <materialDesign:Card DockPanel.Dock="Top" Margin="0,0,0,16" Padding="16">
                         <StackPanel>
-                            <TextBlock Text="Thông vị CLI" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
-                            <TextBlock Text="- CLI cho phép công cụ AI/automation thao tác với app thông qua dòng lệnh." TextWrapping="Wrap"/>
-                            <TextBlock Text="- Dữ liệu vẫn nằm local trên máy người dùng, App không cần server online, không tự gửi dữ liệu ra ngoài." TextWrapping="Wrap" Margin="0,0,0,16"/>
+                            <TextBlock Text="Thông tin CLI" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
+                            <TextBlock Text="- CLI giúp công cụ AI/automation bên ngoài thao tác với dữ liệu của app qua dòng lệnh." TextWrapping="Wrap"/>
+                            <TextBlock Text="- Dữ liệu vẫn lưu trên máy người dùng." TextWrapping="Wrap" Margin="0,0,0,16"/>
                             
                             <StackPanel Orientation="Horizontal" Margin="0,4">
                                 <TextBlock Text="Trạng thái CLI: " FontWeight="SemiBold" Width="120"/>
@@ -1183,7 +1221,7 @@
                                 <TextBox Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" MinWidth="400" Background="Transparent" BorderThickness="0"/>
                             </StackPanel>
                             
-                            <Button Content="Mở tài liệu (CLI_USAGE.md)" Command="{Binding OpenDocsCommand}" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                            <Button Content="Mở hướng dẫn CLI" Command="{Binding OpenDocsCommand}" HorizontalAlignment="Left" Margin="0,16,0,0"/>
                         </StackPanel>
                     </materialDesign:Card>
 

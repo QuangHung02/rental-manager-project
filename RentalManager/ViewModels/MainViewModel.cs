@@ -34,6 +34,7 @@ public class MainViewModel : ViewModelBase
     private string _activeDashboardPeriod = string.Empty;
     private string _statusMessage = "Sẵn sàng";
     private DashboardSummary _dashboard = new();
+    private DashboardSummary _yearlyDashboard = new();
     private Property? _selectedProperty;
     private Room? _selectedRoom;
     private Tenant? _selectedTenant;
@@ -148,10 +149,10 @@ public class MainViewModel : ViewModelBase
         GenerateAllInvoicesCommand = new RelayCommand(() => Run(GenerateAllInvoices));
         GenerateReadyInvoicesCommand = new RelayCommand(() => Run(GenerateReadyInvoices));
         OpenInvoiceGenerationDrawerCommand = new RelayCommand(OpenInvoiceGenerationDrawer);
-        OpenPaymentDrawerCommand = new RelayCommand(() => Run(() => OpenPaymentDrawer(SelectedInvoice)));
+        OpenPaymentDrawerCommand = new RelayCommand(() => Run(() => OpenPaymentDrawer(SelectedInvoice)), () => CanPayInvoice(SelectedInvoice));
         IssueInvoiceCommand = new RelayCommand(() => Run(IssueInvoice), () => SelectedInvoice is not null);
-        RecordPaymentCommand = new RelayCommand(() => Run(RecordPayment), () => SelectedInvoice is not null && SelectedInvoice.RemainingAmount > 0);
-        FillRemainingPaymentCommand = new RelayCommand(FillRemainingPayment, () => SelectedInvoice is not null && SelectedInvoice.RemainingAmount > 0);
+        RecordPaymentCommand = new RelayCommand(() => Run(RecordPayment), () => CanPayInvoice(SelectedInvoice));
+        FillRemainingPaymentCommand = new RelayCommand(FillRemainingPayment, () => CanPayInvoice(SelectedInvoice));
         CopyInvoiceCommand = new RelayCommand(() => Run(CopyInvoice), () => SelectedInvoice is not null);
         CancelInvoiceCommand = new RelayCommand(() => Run(CancelInvoice), () => SelectedInvoice is not null);
         BackupCommand = new RelayCommand(() => Run(Backup));
@@ -247,6 +248,7 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<Invoice> DashboardUnpaidInvoices { get; } = new();
     public ObservableCollection<MissingReadingRow> DashboardMissingReadings { get; } = new();
     public ObservableCollection<Payment> DashboardRecentPayments { get; } = new();
+    public ObservableCollection<DashboardMonthlySummary> DashboardMonthlySummaries { get; } = new();
     public ObservableCollection<Payment> Payments { get; } = new();
     public ObservableCollection<Payment> FilteredPayments { get; } = new();
     public ObservableCollection<InvoiceReadinessRow> InvoiceReadinessRows { get; } = new();
@@ -1053,6 +1055,12 @@ public class MainViewModel : ViewModelBase
         set => SetProperty(ref _dashboard, value);
     }
 
+    public DashboardSummary YearlyDashboard
+    {
+        get => _yearlyDashboard;
+        set => SetProperty(ref _yearlyDashboard, value);
+    }
+
     public string DatabasePath => _backupService.DatabasePath;
 
     public string CliPath
@@ -1331,10 +1339,12 @@ public class MainViewModel : ViewModelBase
         ActiveDashboardPeriod = startMonth == endMonth ? $"Đang xem: {startMonth}" : $"Đang xem: {startMonth} đến {endMonth}";
         int? propertyId = DashboardPropertyFilterId == 0 ? null : DashboardPropertyFilterId;
         Dashboard = _dashboardService.GetSummary(startMonth, endMonth, propertyId);
+        YearlyDashboard = _dashboardService.GetSummary($"{DashboardYear:0000}-01", $"{DashboardYear:0000}-12", propertyId);
         Replace(DashboardInvoices, _dashboardService.GetInvoices(startMonth, endMonth, propertyId));
         Replace(DashboardUnpaidInvoices, _dashboardService.GetUnpaidInvoices(startMonth, endMonth, propertyId));
         Replace(DashboardMissingReadings, _dashboardService.GetMissingReadings(BillingMonth, propertyId));
         Replace(DashboardRecentPayments, _dashboardService.GetRecentPayments(startMonth, endMonth, propertyId));
+        Replace(DashboardMonthlySummaries, _dashboardService.GetMonthlySummaries(DashboardYear, propertyId));
     }
 
     private void AddProperty()
@@ -1958,9 +1968,9 @@ public class MainViewModel : ViewModelBase
     private void RecordPayment()
     {
         EnsureInvoiceSelected();
-        if (SelectedInvoice!.RemainingAmount <= 0)
+        if (!CanPayInvoice(SelectedInvoice))
         {
-            throw new ValidationException("Hóa đơn này đã được thanh toán đủ.");
+            throw new ValidationException("Hóa đơn này không thể ghi nhận thanh toán.");
         }
 
         if (NewPaymentAmount <= 0)
@@ -1982,9 +1992,9 @@ public class MainViewModel : ViewModelBase
     private void FillRemainingPayment()
     {
         if (SelectedInvoice is null) return;
-        if (SelectedInvoice.RemainingAmount <= 0)
+        if (!CanPayInvoice(SelectedInvoice))
         {
-            StatusMessage = "Hóa đơn này đã được thanh toán đủ.";
+            StatusMessage = "Hóa đơn này không thể ghi nhận thanh toán.";
             return;
         }
 
@@ -2006,9 +2016,9 @@ public class MainViewModel : ViewModelBase
         }
 
         SelectedInvoice = invoice;
-        if (invoice.RemainingAmount <= 0)
+        if (!CanPayInvoice(invoice))
         {
-            StatusMessage = "Hóa đơn này đã được thanh toán đủ.";
+            StatusMessage = "Hóa đơn này không thể ghi nhận thanh toán.";
             return;
         }
 
@@ -2016,6 +2026,14 @@ public class MainViewModel : ViewModelBase
         NewPaymentMethod = PaymentMethod.Cash;
         OnPropertyChanged(nameof(NewPaymentMethod));
         IsPaymentDrawerOpen = true;
+    }
+
+    private static bool CanPayInvoice(Invoice? invoice)
+    {
+        return invoice is not null &&
+            invoice.RemainingAmount > 0 &&
+            invoice.Status != InvoiceStatus.Paid &&
+            invoice.Status != InvoiceStatus.Cancelled;
     }
 
     private void CopyInvoice()
@@ -3084,6 +3102,7 @@ public class MainViewModel : ViewModelBase
         CancelRoomFeeConfigEditCommand.RaiseCanExecuteChanged();
         OnPropertyChanged(nameof(SelectedRoomFeeToggleActionText));
         IssueInvoiceCommand.RaiseCanExecuteChanged();
+        OpenPaymentDrawerCommand.RaiseCanExecuteChanged();
         RecordPaymentCommand.RaiseCanExecuteChanged();
         FillRemainingPaymentCommand.RaiseCanExecuteChanged();
         CopyInvoiceCommand.RaiseCanExecuteChanged();

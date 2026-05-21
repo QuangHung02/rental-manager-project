@@ -23,7 +23,13 @@ class Program
 
         if (args.Length < 1)
         {
-            PrintJson(new { success = false, message = "No command provided. Use 'invoice', 'meter', or 'payment'." });
+            PrintJson(new
+            {
+                success = false,
+                code = "INVALID_ARGUMENT",
+                message = "Chưa nhập lệnh.",
+                nextAction = "Dùng một trong các lệnh: invoice create, invoice unpaid, meter add, payment add."
+            });
             return;
         }
 
@@ -54,13 +60,20 @@ class Program
             }
             else
             {
-                PrintJson(new { success = false, message = "Unknown command or sub-command." });
+                PrintJson(new
+                {
+                    success = false,
+                    code = "INVALID_ARGUMENT",
+                    message = "Lệnh không được hỗ trợ.",
+                    nextAction = "Dùng một trong các lệnh: invoice create, invoice unpaid, meter add, payment add."
+                });
             }
         }
         catch (ValidationException ex)
         {
             string code = "VALIDATION_ERROR";
-            object details = null;
+            string nextAction = "Kiểm tra lại tham số và thử lại.";
+            object? details = null;
 
             if (ex.Message.Contains("thiếu chỉ số"))
             {
@@ -68,14 +81,41 @@ class Program
                 var roomStr = GetArg(args, "room");
                 var month = GetArg(args, "month");
                 details = new { room = roomStr, billingMonth = month };
+                nextAction = "Nhập chỉ số điện/nước cho tháng đang xử lý rồi tạo hóa đơn lại.";
             }
             else if (ex.Message.Contains("đã tồn tại"))
             {
                 code = "INVOICE_ALREADY_EXISTS";
+                nextAction = "Dùng hóa đơn hiện có hoặc chọn tháng/phòng khác.";
             }
             else if (ex.Message.Contains("Có nhiều phòng trùng tên"))
             {
                 code = "AMBIGUOUS_ROOM";
+                nextAction = "Thêm --property để xác định đúng nhà / khu trọ.";
+            }
+            else if (ex.Message.Contains("Không tìm thấy phòng"))
+            {
+                code = "ROOM_NOT_FOUND";
+                nextAction = "Kiểm tra lại --property và --room.";
+            }
+            else if (ex.Message.Contains("Không tìm thấy nhà") || ex.Message.Contains("Property was not found"))
+            {
+                code = "PROPERTY_NOT_FOUND";
+                nextAction = "Kiểm tra lại tên nhà / khu trọ.";
+            }
+            else if (ex.Message.Contains("Không tìm thấy loại phí"))
+            {
+                code = "FEE_NOT_FOUND";
+                nextAction = "Kiểm tra lại --fee theo tên khoản phí đang dùng trong app.";
+            }
+            else if (ex.Message.Contains("Số tiền thanh toán") || ex.Message.Contains("thanh toán"))
+            {
+                code = "PAYMENT_ERROR";
+                nextAction = "Kiểm tra invoiceId, số tiền còn lại và số tiền thanh toán.";
+            }
+            else if (ex.Message.Contains("Thiếu tham số") || ex.Message.Contains("Vui lòng"))
+            {
+                code = "INVALID_ARGUMENT";
             }
 
             PrintJson(new
@@ -83,21 +123,27 @@ class Program
                 success = false,
                 code = code,
                 message = ex.Message,
+                nextAction = nextAction,
                 details = details
             });
         }
         catch (Exception ex)
         {
+            var code = ex is FormatException or OverflowException ? "INVALID_ARGUMENT" : "SYSTEM_ERROR";
+            var nextAction = code == "INVALID_ARGUMENT"
+                ? "Kiểm tra định dạng số, tháng và các tham số rồi thử lại."
+                : "Kiểm tra log hoặc chạy lại lệnh sau khi xác nhận dữ liệu.";
             PrintJson(new
             {
                 success = false,
-                code = "SYSTEM_ERROR",
-                message = ex.Message
+                code = code,
+                message = ex.Message,
+                nextAction = nextAction
             });
         }
     }
 
-    static string GetArg(string[] args, string name)
+    static string? GetArg(string[] args, string name)
     {
         var idx = Array.IndexOf(args, "--" + name);
         if (idx >= 0 && idx < args.Length - 1) return args[idx + 1];
@@ -109,7 +155,7 @@ class Program
         Console.WriteLine(JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true }));
     }
 
-    static Room FindRoom(string propertyStr, string roomStr)
+    static Room FindRoom(string? propertyStr, string roomStr)
     {
         using var db = DbContextFactory.Create();
         var lowerRoomStr = roomStr?.ToLowerInvariant();
@@ -128,8 +174,8 @@ class Program
         {
             matchedRooms = query.Where(r => 
                 r.RoomName.ToLowerInvariant() == lowerRoomStr || 
-                (r.Property.Name + " - " + r.RoomName).ToLowerInvariant() == lowerRoomStr ||
-                (r.Property.Name + "-" + r.RoomName).ToLowerInvariant() == lowerRoomStr ||
+                (r.Property != null && (r.Property.Name + " - " + r.RoomName).ToLowerInvariant() == lowerRoomStr) ||
+                (r.Property != null && (r.Property.Name + "-" + r.RoomName).ToLowerInvariant() == lowerRoomStr) ||
                 r.DisplayNameWithProperty.ToLowerInvariant() == lowerRoomStr).ToList();
         }
         
@@ -190,7 +236,7 @@ class Program
         
         var query = db.Invoices
             .Include(x => x.Room)
-            .ThenInclude(x => x.Property)
+            .ThenInclude(x => x!.Property)
             .AsQueryable();
             
         if (!string.IsNullOrEmpty(month))
@@ -198,11 +244,19 @@ class Program
             query = query.Where(x => x.BillingMonth == month);
         }
         
-        var unpaid = query.Where(x => x.Status == InvoiceStatus.Issued || x.Status == InvoiceStatus.Partial).ToList();
+        var unpaid = query
+            .Where(x => (x.Status == InvoiceStatus.Issued || x.Status == InvoiceStatus.Partial) && x.RemainingAmount > 0)
+            .ToList();
+        var count = unpaid.Count;
         
         PrintJson(new
         {
             success = true,
+            code = "OK",
+            count = count,
+            message = count == 0
+                ? "Không có hóa đơn chưa thanh toán phù hợp."
+                : $"Tìm thấy {count} hóa đơn chưa thanh toán.",
             data = unpaid.Select(x => new {
                 invoiceId = x.Id,
                 room = x.Room?.DisplayNameWithProperty,
@@ -245,6 +299,7 @@ class Program
         PrintJson(new
         {
             success = true,
+            code = "METER_READING_SAVED",
             message = "Đã cập nhật chỉ số.",
             data = new
             {
@@ -285,6 +340,7 @@ class Program
         PrintJson(new
         {
             success = true,
+            code = "PAYMENT_RECORDED",
             message = "Đã ghi nhận thanh toán.",
             data = new
             {
@@ -339,6 +395,6 @@ class Program
         };
         meterService.Save(prevReading);
 
-        PrintJson(new { success = true, message = "Seed data created successfully." });
+        PrintJson(new { success = true, code = "SEED_CREATED", message = "Seed data created successfully." });
     }
 }

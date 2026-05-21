@@ -48,7 +48,7 @@ public class DashboardService
             OccupiedRoomCount = rooms.Count(x => x.Status == RoomStatus.Occupied),
             VacantRoomCount = rooms.Count(x => x.Status == RoomStatus.Vacant),
             MissingReadingCount = missing,
-            UnpaidInvoiceCount = invoiceList.Count(x => x.Status == InvoiceStatus.Issued || x.Status == InvoiceStatus.Partial)
+            UnpaidInvoiceCount = invoiceList.Count(x => x.RemainingAmount > 0 && x.Status != InvoiceStatus.Paid && x.Status != InvoiceStatus.Cancelled)
         };
     }
 
@@ -68,6 +68,43 @@ public class DashboardService
         return invoices.AsNoTracking()
             .OrderByDescending(x => x.BillingMonth)
             .ThenBy(x => x.Room!.RoomName)
+            .ToList();
+    }
+
+    public List<DashboardMonthlySummary> GetMonthlySummaries(int year, int? propertyId = null)
+    {
+        var startBillingMonth = $"{year:0000}-01";
+        var endBillingMonth = $"{year:0000}-12";
+        using var db = DbContextFactory.Create();
+        var invoices = db.Invoices
+            .Include(x => x.Room)
+            .Where(x => string.Compare(x.BillingMonth, startBillingMonth) >= 0 && string.Compare(x.BillingMonth, endBillingMonth) <= 0);
+
+        if (propertyId is > 0)
+        {
+            invoices = invoices.Where(x => x.Room!.PropertyId == propertyId);
+        }
+
+        var grouped = invoices.AsNoTracking()
+            .ToList()
+            .GroupBy(x => x.BillingMonth)
+            .ToDictionary(x => x.Key, x => x.ToList());
+
+        return Enumerable.Range(1, 12)
+            .Select(month =>
+            {
+                var billingMonth = $"{year:0000}-{month:00}";
+                grouped.TryGetValue(billingMonth, out var rows);
+                rows ??= new List<Invoice>();
+                return new DashboardMonthlySummary
+                {
+                    BillingMonth = billingMonth,
+                    ExpectedRevenue = rows.Sum(x => x.TotalAmount),
+                    CollectedAmount = rows.Sum(x => x.PaidAmount),
+                    UnpaidAmount = rows.Sum(x => x.RemainingAmount),
+                    UnpaidInvoiceCount = rows.Count(x => x.RemainingAmount > 0 && x.Status != InvoiceStatus.Paid && x.Status != InvoiceStatus.Cancelled)
+                };
+            })
             .ToList();
     }
 
