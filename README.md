@@ -8,68 +8,29 @@ Mục tiêu của RentalManager không phải là thay thế toàn bộ các h�
 
 ---
 
-## Điểm nổi bật trong phiên bản hiện tại
+## Tính năng hiện có
 
-### 1. Giao diện quản lý dễ tiếp cận
+RentalManager hiện có hai nhóm chức năng chính: **quản lý nhà/phòng cho thuê** và **CLI hỗ trợ tự động hóa bên ngoài**.
 
-RentalManager tập trung vào luồng thao tác thực tế của chủ trọ thay vì chia giao diện quá kỹ theo bảng dữ liệu. Các nhóm chức năng chính gồm:
+### Quản lý nhà/phòng cho thuê
 
-- **Tổng quan:** xem nhanh doanh thu, công nợ, phòng đang thuê, phòng trống, hóa đơn còn nợ và tình trạng thiếu chỉ số.
-- **Nhà & Phòng:** quản lý khu trọ, phòng và các khoản phí áp dụng cho từng phòng.
-- **Người thuê:** lưu thông tin người thuê, phân phòng và theo dõi trạng thái thuê.
-- **Thu tiền tháng này:** nhập chỉ số điện/nước, tạo hóa đơn, ghi nhận thanh toán và xem lịch sử thanh toán.
-- **Cài đặt:** quản lý dữ liệu, sao lưu, khôi phục, tạo dữ liệu mẫu và automation CLI.
+Nhóm chức năng chính của app tập trung vào các công việc vận hành hằng tháng của chủ trọ:
 
-### 2. Dashboard tháng và năm
+- Quản lý danh sách nhà/khu trọ, phòng, trạng thái phòng và người thuê.
+- Phân người thuê vào phòng, theo dõi phòng đang thuê hoặc còn trống.
+- Thiết lập các khoản phí cần thu theo từng phòng, bao gồm phí cố định và phí dựa trên chỉ số sử dụng.
+- Nhập chỉ số điện/nước theo tháng và dùng dữ liệu đó để tạo hóa đơn.
+- Tạo hóa đơn, theo dõi trạng thái hóa đơn, ghi nhận thanh toán và khoản còn nợ.
+- Xem tổng quan doanh thu theo tháng/năm để nắm nhanh tình hình thu tiền, số tiền đã thu, chưa thu và các hóa đơn còn nợ.
+- Sao lưu, khôi phục dữ liệu và xóa toàn bộ dữ liệu hiện tại khi muốn bắt đầu lại sau quá trình test.
 
-Dashboard hiện hỗ trợ:
+Mục tiêu của nhóm chức năng này là giúp chủ trọ thao tác nhanh trên một giao diện desktop đơn giản, dễ tiếp cận hơn so với các hệ thống web quản lý nhiều bước hoặc quá nặng cho nhu cầu nhỏ và vừa.
 
-- Tổng quan theo tháng.
-- Tổng quan theo năm.
-- Các chỉ số chính như dự kiến thu, đã thu, chưa thu và hóa đơn còn nợ.
-- Bảng tóm tắt theo tháng để dễ nhìn tình hình doanh thu trong năm.
+### CLI hỗ trợ automation bên ngoài
 
-### 3. Quản lý phí linh hoạt
+Bên cạnh giao diện chính, RentalManager có thêm CLI để người dùng nâng cao có thể thao tác với dữ liệu qua dòng lệnh.
 
-Ứng dụng hỗ trợ nhiều loại phí thường gặp trong nhà trọ:
-
-- Điện.
-- Nước.
-- Wifi.
-- Gửi xe.
-- Rác.
-- Khoản phí khác.
-
-Có thể dùng giá mặc định hoặc cấu hình riêng theo từng phòng. Các khoản phí theo chỉ số, phí cố định, phí theo người và phí theo đơn vị được xử lý trong luồng tạo hóa đơn.
-
-### 4. Chỉ số điện/nước và hóa đơn
-
-RentalManager hỗ trợ:
-
-- Nhập hoặc cập nhật chỉ số điện/nước theo tháng.
-- Tự tính lượng sử dụng và tiền phí.
-- Tạo hóa đơn theo phòng.
-- Tạo hàng loạt hóa đơn cho các phòng đủ dữ liệu.
-- Chống tạo trùng hóa đơn.
-- Ghi nhận thanh toán toàn phần hoặc một phần.
-- Theo dõi hóa đơn còn nợ.
-
-### 5. Sao lưu và khôi phục dữ liệu
-
-Ứng dụng có sẵn các thao tác dữ liệu cơ bản:
-
-- Mở thư mục dữ liệu.
-- Tạo bản sao lưu.
-- Mở thư mục sao lưu.
-- Khôi phục từ bản sao lưu.
-- Tự tạo bản sao lưu an toàn trước khi khôi phục.
-- Xóa toàn bộ dữ liệu hiện tại để bắt đầu lại sau khi test hoặc tạo dữ liệu mẫu.
-
-### 6. CLI cho automation bên ngoài
-
-RentalManager đi kèm `RentalManager.Cli`, cho phép công cụ bên ngoài thao tác với dữ liệu app qua dòng lệnh.
-
-CLI phù hợp cho người dùng nâng cao muốn tự thiết lập automation hoặc AI agent bên ngoài. Ứng dụng **không tích hợp AI sẵn**; CLI chỉ đóng vai trò là lớp điều khiển để công cụ khác có thể gọi lệnh, nhận JSON output và quyết định bước tiếp theo.
+CLI không phải là AI tích hợp sẵn trong app. Nó đóng vai trò như một lớp điều khiển để người dùng có thể tự kết nối với script, bot hoặc công cụ AI/automation bên ngoài như OpenClaw. Các lệnh CLI trả kết quả dạng JSON, giúp công cụ bên ngoài dễ đọc kết quả, biết thao tác thành công hay thất bại và quyết định bước tiếp theo.
 
 Tài liệu chi tiết: [docs/CLI_USAGE.md](docs/CLI_USAGE.md)
 
@@ -131,36 +92,6 @@ Chạy CLI:
 ```bash
 dotnet run --project RentalManager.Cli/RentalManager.Cli.csproj -- invoice unpaid --month "2026-05"
 ```
-
----
-
-## Ví dụ sử dụng CLI
-
-Tạo hóa đơn:
-
-```bash
-RentalManager.Cli.exe invoice create --property "Nhà A" --room "Phòng 101" --month "2026-05"
-```
-
-Xem hóa đơn chưa thanh toán:
-
-```bash
-RentalManager.Cli.exe invoice unpaid --month "2026-05"
-```
-
-Nhập chỉ số điện:
-
-```bash
-RentalManager.Cli.exe meter add --property "Nhà A" --room "Phòng 101" --fee "Điện" --month "2026-05" --current 150
-```
-
-Ghi nhận thanh toán:
-
-```bash
-RentalManager.Cli.exe payment add --invoice 12 --amount 300000 --method "Tiền mặt"
-```
-
-CLI trả về JSON để người dùng, script hoặc agent bên ngoài có thể đọc kết quả rõ ràng.
 
 ---
 
