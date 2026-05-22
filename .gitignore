@@ -487,3 +487,7 @@ $RECYCLE.BIN/
 *.sqlite
 *.db
 
+
+# Local RentalManager docs
+RentalManager/docs/
+
