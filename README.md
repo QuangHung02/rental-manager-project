@@ -157,13 +157,6 @@ Các hướng phát triển có thể bổ sung sau:
 - Export hóa đơn, thanh toán, công nợ và báo cáo năm.
 - Tạo mẫu báo cáo phù hợp cho chủ trọ nhỏ.
 
-### Online/Web version
-
-- Tách service layer thành Web API.
-- Chuyển database sang SQL Server/PostgreSQL nếu cần nhiều người dùng.
-- Thêm authentication/authorization.
-- Hỗ trợ truy cập từ nhiều thiết bị.
-
 ### Automation/AI nâng cao
 
 - Mở rộng CLI command coverage.
@@ -173,7 +166,6 @@ Các hướng phát triển có thể bổ sung sau:
 
 ### Backup và dữ liệu
 
-- Lịch backup tự động.
 - Tùy chọn thư mục backup.
 - Cảnh báo khi lâu chưa sao lưu.
 - Import/export dữ liệu để chuyển máy dễ hơn.
