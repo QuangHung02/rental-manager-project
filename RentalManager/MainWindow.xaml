@@ -1196,9 +1196,17 @@
                 <StackPanel Margin="16">
                     <TextBlock Text="Vị trí file dữ liệu" FontWeight="SemiBold"/>
                     <TextBox Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" MinWidth="720"/>
-                    <Button Content="Sao lưu ra Desktop\RentalManagerBackups" Width="280" HorizontalAlignment="Left" Command="{Binding BackupCommand}"/>
+                    <Button Content="Mở thư mục dữ liệu" Width="280" HorizontalAlignment="Left" Command="{Binding OpenDataFolderCommand}"/>
+                    <TextBlock Text="Thư mục sao lưu" FontWeight="SemiBold" Margin="0,12,0,0"/>
+                    <TextBox Text="{Binding BackupFolderPath, Mode=OneWay}" IsReadOnly="True" MinWidth="720"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Tạo bản sao lưu" Width="280" Command="{Binding BackupCommand}"/>
+                        <Button Content="Mở thư mục sao lưu" Width="280" Command="{Binding OpenBackupFolderCommand}"/>
+                    </StackPanel>
+                    <TextBlock Text="Khôi phục sẽ sao lưu dữ liệu hiện tại trước, sau đó thay bằng dữ liệu từ file sao lưu bạn chọn." FontSize="13" Opacity="0.72" TextWrapping="Wrap" Margin="0,8,0,0"/>
                     <Button Content="Khôi phục từ bản sao lưu" Width="280" HorizontalAlignment="Left" Command="{Binding RestoreCommand}"/>
                     <Button Content="Tạo dữ liệu mẫu" Width="280" HorizontalAlignment="Left" Command="{Binding SeedDemoDataCommand}"/>
+                    <Button Content="Xóa toàn bộ dữ liệu" Width="280" HorizontalAlignment="Left" Command="{Binding ClearAllDataCommand}"/>
                 </StackPanel>
             </TabItem>
             <TabItem x:Name="AutomationTab" Header="AI &amp; Tự động hóa">

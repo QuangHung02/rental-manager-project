@@ -10,7 +10,8 @@ public class DemoDataService
     public void Seed()
     {
         using var db = DbContextFactory.Create();
-        ResetDemoData(db);
+        ClearDataTables(db);
+        EnsureDefaultFeeTypes(db);
 
         var electricity = GetFeeType(db, "Electricity", CalculationType.Meter, "kWh", 3500);
         var water = GetFeeType(db, "Water", CalculationType.PerPerson, "person", 100000);
@@ -59,7 +60,15 @@ public class DemoDataService
         db.SaveChanges();
     }
 
-    private static void ResetDemoData(RentalManagerDbContext db)
+    public void ClearAllData()
+    {
+        using var db = DbContextFactory.Create();
+        ClearDataTables(db);
+        EnsureDefaultFeeTypes(db);
+        db.SaveChanges();
+    }
+
+    private static void ClearDataTables(RentalManagerDbContext db)
     {
         db.Payments.RemoveRange(db.Payments);
         db.InvoiceItems.RemoveRange(db.InvoiceItems);
@@ -72,6 +81,30 @@ public class DemoDataService
         db.Properties.RemoveRange(db.Properties);
         db.FeeTypes.RemoveRange(db.FeeTypes);
         db.SaveChanges();
+    }
+
+    private static void EnsureDefaultFeeTypes(RentalManagerDbContext db)
+    {
+        AddDefaultFeeType(db, 1, "Electricity", CalculationType.Meter, "kWh", 3500);
+        AddDefaultFeeType(db, 2, "Water", CalculationType.PerPerson, "person", 100000);
+        AddDefaultFeeType(db, 3, "Wifi", CalculationType.Fixed, "month", 0);
+        AddDefaultFeeType(db, 4, "Parking", CalculationType.PerUnit, "unit", 150000);
+        AddDefaultFeeType(db, 5, "Garbage", CalculationType.Fixed, "month", 0);
+        AddDefaultFeeType(db, 6, "Other", CalculationType.Manual, null, 0);
+    }
+
+    private static void AddDefaultFeeType(RentalManagerDbContext db, int id, string name, CalculationType type, string? unit, decimal price)
+    {
+        db.FeeTypes.Add(new FeeType
+        {
+            Id = id,
+            Name = name,
+            DefaultCalculationType = type,
+            DefaultUnit = unit,
+            DefaultUnitPrice = price,
+            IsSystem = true,
+            IsActive = true
+        });
     }
 
     private static FeeType GetFeeType(RentalManagerDbContext db, string name, CalculationType type, string unit, decimal price)

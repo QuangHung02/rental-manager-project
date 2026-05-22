@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using Microsoft.Win32;
 using RentalManager.Data;
 using RentalManager.DTOs;
@@ -158,6 +159,9 @@ public class MainViewModel : ViewModelBase
         CancelInvoiceCommand = new RelayCommand(() => Run(CancelInvoice), () => SelectedInvoice is not null);
         BackupCommand = new RelayCommand(() => Run(Backup));
         RestoreCommand = new RelayCommand(() => Run(Restore));
+        OpenDataFolderCommand = new RelayCommand(() => Run(OpenDataFolder));
+        OpenBackupFolderCommand = new RelayCommand(() => Run(OpenBackupFolder));
+        ClearAllDataCommand = new RelayCommand(() => Run(ClearAllData));
         SeedDemoDataCommand = new RelayCommand(() => Run(SeedDemoData));
         OpenDocsCommand = new RelayCommand(OpenDocs);
         ApplyFiltersCommand = new RelayCommand(RefreshAllFilters);
@@ -1063,6 +1067,7 @@ public class MainViewModel : ViewModelBase
     }
 
     public string DatabasePath => _backupService.DatabasePath;
+    public string BackupFolderPath => _backupService.BackupFolderPath;
 
     public string CliPath
     {
@@ -1159,6 +1164,9 @@ public class MainViewModel : ViewModelBase
     public RelayCommand CancelInvoiceCommand { get; }
     public RelayCommand BackupCommand { get; }
     public RelayCommand RestoreCommand { get; }
+    public RelayCommand OpenDataFolderCommand { get; }
+    public RelayCommand OpenBackupFolderCommand { get; }
+    public RelayCommand ClearAllDataCommand { get; }
     public RelayCommand SeedDemoDataCommand { get; }
     public RelayCommand ApplyFiltersCommand { get; }
     public RelayCommand ClearFiltersCommand { get; }
@@ -2073,9 +2081,8 @@ public class MainViewModel : ViewModelBase
 
     private void Backup()
     {
-        var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "RentalManagerBackups");
-        var path = _backupService.BackupTo(folder);
-        StatusMessage = $"Đã sao lưu: {path}";
+        var path = _backupService.BackupTo(_backupService.BackupFolderPath);
+        StatusMessage = $"Đã tạo bản sao lưu: {path}";
     }
 
     private void Restore()
@@ -2085,10 +2092,107 @@ public class MainViewModel : ViewModelBase
         {
             var confirm = MessageBox.Show("Khôi phục bản sao lưu này? Dữ liệu hiện tại sẽ bị thay thế.", "Khôi phục dữ liệu", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes) return;
-            _backupService.RestoreFrom(dialog.FileName);
+            var preRestoreBackup = _backupService.RestoreFrom(dialog.FileName);
             Load();
-            StatusMessage = "Đã khôi phục dữ liệu.";
+            StatusMessage = preRestoreBackup is null
+                ? "Đã khôi phục dữ liệu."
+                : $"Đã khôi phục dữ liệu. Bản trước khi khôi phục: {preRestoreBackup}";
+            MessageBox.Show("Đã khôi phục dữ liệu. App đã tạo một bản sao lưu an toàn trước khi khôi phục. Nếu màn hình chưa cập nhật đầy đủ, hãy mở lại ứng dụng.", "Khôi phục dữ liệu", MessageBoxButton.OK, MessageBoxImage.Information);
         }
+    }
+
+    private void OpenDataFolder()
+    {
+        OpenFolder(Path.GetDirectoryName(DatabasePath), "Không tìm thấy thư mục dữ liệu.");
+    }
+
+    private void OpenBackupFolder()
+    {
+        Directory.CreateDirectory(BackupFolderPath);
+        OpenFolder(BackupFolderPath, "Không tìm thấy thư mục sao lưu.");
+    }
+
+    private static void OpenFolder(string? folderPath, string missingMessage)
+    {
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            MessageBox.Show(missingMessage, "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo { FileName = folderPath, UseShellExecute = true });
+    }
+
+    private void ClearAllData()
+    {
+        if (!ConfirmClearAllData())
+        {
+            return;
+        }
+
+        var backupPath = _backupService.BackupTo(_backupService.BackupFolderPath, "pre-reset-backup");
+        _demoDataService.ClearAllData();
+        Load();
+        StatusMessage = $"Đã xóa toàn bộ dữ liệu. Bản sao lưu trước khi xóa: {backupPath}";
+        MessageBox.Show("Đã xóa toàn bộ dữ liệu. App đã tạo một bản sao lưu an toàn trước khi xóa.", "Xóa toàn bộ dữ liệu", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private static bool ConfirmClearAllData()
+    {
+        const string confirmationText = "XOA DU LIEU";
+        var input = new TextBox { MinWidth = 320, Margin = new Thickness(0, 8, 0, 12) };
+        var confirmButton = new Button { Content = "Xóa toàn bộ dữ liệu", IsDefault = true, MinWidth = 140, Margin = new Thickness(0, 0, 8, 0) };
+        var cancelButton = new Button { Content = "Hủy", IsCancel = true, MinWidth = 90 };
+        var result = false;
+
+        var window = new Window
+        {
+            Title = "Xóa toàn bộ dữ liệu",
+            Width = 520,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            ResizeMode = ResizeMode.NoResize,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(16),
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Thao tác này sẽ xóa toàn bộ dữ liệu hiện tại, bao gồm nhà/khu trọ, phòng, người thuê, phân phòng, chỉ số điện/nước, hóa đơn, thanh toán, cấu hình phí và dữ liệu liên quan khác.",
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    new TextBlock
+                    {
+                        Text = $"Nhập {confirmationText} để xác nhận.",
+                        FontWeight = FontWeights.SemiBold,
+                        Margin = new Thickness(0, 12, 0, 0)
+                    },
+                    input,
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Children = { confirmButton, cancelButton }
+                    }
+                }
+            }
+        };
+
+        confirmButton.Click += (_, _) =>
+        {
+            if (!string.Equals(input.Text?.Trim(), confirmationText, StringComparison.Ordinal))
+            {
+                MessageBox.Show($"Vui lòng nhập đúng {confirmationText} để xác nhận.", "Xóa toàn bộ dữ liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            result = true;
+            window.Close();
+        };
+
+        window.ShowDialog();
+        return result;
     }
 
     private void SeedDemoData()
