@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <CodePage>65001</CodePage>
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>

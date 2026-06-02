@@ -10,7 +10,7 @@
         TextOptions.TextRenderingMode="Auto"
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
-        Title="Quản lý nhà trọ" Icon="Assets/appicon.ico" Height="780" Width="1240" MinHeight="680" MinWidth="1040">
+        Title="Quản lý nhà trọ" Icon="Assets/appicon.ico" Height="720" Width="1100" MinHeight="560" MinWidth="900">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
@@ -87,6 +87,7 @@
             <TabItem x:Name="DashboardTab" Header="Tổng quan">
                 <TabControl TabStripPlacement="Top" SelectionChanged="TabControl_SelectionChanged">
                     <TabItem Header="Tổng quan tháng">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                         <DockPanel Margin="8">
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tổng quan tháng"/>
                             <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
@@ -98,14 +99,14 @@
                                     <TextBlock Text="{Binding ActiveDashboardPeriod}" FontWeight="SemiBold" Margin="12,18,4,0"/>
                                 </WrapPanel>
                             </GroupBox>
-                            <UniformGrid DockPanel.Dock="Top" Rows="1" Columns="6" Margin="8">
-                                <GroupBox Header="Dự kiến thu"><TextBlock Text="{Binding Dashboard.ExpectedRevenue, StringFormat=N0}" FontSize="18"/></GroupBox>
-                                <GroupBox Header="Đã thu"><TextBlock Text="{Binding Dashboard.CollectedAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
-                                <GroupBox Header="Chưa thu"><TextBlock Text="{Binding Dashboard.UnpaidAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
-                                <GroupBox Header="Phòng đang thuê"><TextBlock Text="{Binding Dashboard.OccupiedRoomCount}" FontSize="18"/></GroupBox>
-                                <GroupBox Header="Phòng trống"><TextBlock Text="{Binding Dashboard.VacantRoomCount}" FontSize="18"/></GroupBox>
-                                <GroupBox Header="Hóa đơn còn nợ"><TextBlock Text="{Binding Dashboard.UnpaidInvoiceCount}" FontSize="18"/></GroupBox>
-                            </UniformGrid>
+                            <WrapPanel DockPanel.Dock="Top" Margin="8">
+                                <GroupBox Header="Dự kiến thu" Width="170"><TextBlock Text="{Binding Dashboard.ExpectedRevenue, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Đã thu" Width="170"><TextBlock Text="{Binding Dashboard.CollectedAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Chưa thu" Width="170"><TextBlock Text="{Binding Dashboard.UnpaidAmount, StringFormat=N0}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Phòng đang thuê" Width="170"><TextBlock Text="{Binding Dashboard.OccupiedRoomCount}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Phòng trống" Width="170"><TextBlock Text="{Binding Dashboard.VacantRoomCount}" FontSize="18"/></GroupBox>
+                                <GroupBox Header="Hóa đơn còn nợ" Width="170"><TextBlock Text="{Binding Dashboard.UnpaidInvoiceCount}" FontSize="18"/></GroupBox>
+                            </WrapPanel>
                             <Border DockPanel.Dock="Top" Margin="10,0,10,4" Padding="8" Background="#fff7df" BorderBrush="#e2bf65" BorderThickness="1">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="Có "/>
@@ -148,6 +149,7 @@
                                 </GroupBox>
                             </Grid>
                         </DockPanel>
+                        </ScrollViewer>
                     </TabItem>
                     <TabItem Header="Tổng quan năm">
                         <DockPanel Margin="8">
@@ -292,8 +294,8 @@
 
                     <!-- ── PROPERTY MODAL (centered) ── -->
                     <Border Panel.ZIndex="51"
-                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Width="500" Margin="40"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                            MaxWidth="500" Margin="24"
                             Background="{DynamicResource MaterialDesignPaper}"
                             CornerRadius="6"
                             Visibility="{Binding IsPropertyDrawerOpen, Converter={StaticResource BoolToVis}}">
@@ -309,6 +311,7 @@
                                                Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="20,16,20,20">
                                 <TextBlock Text="Tên nhà / khu trọ" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding NewProperty.Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
@@ -323,13 +326,14 @@
                                     <Button Content="Hủy sửa" Command="{Binding CancelPropertyEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0"/>
                                 </StackPanel>
                             </StackPanel>
+                            </ScrollViewer>
                         </DockPanel>
                     </Border>
 
                     <!-- ── ROOM MODAL (centered) ── -->
                     <Border Panel.ZIndex="51"
-                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Width="540" Margin="40"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                            MaxWidth="540" Margin="24"
                             Background="{DynamicResource MaterialDesignPaper}"
                             CornerRadius="6"
                             Visibility="{Binding IsRoomDrawerOpen, Converter={StaticResource BoolToVis}}">
@@ -345,6 +349,7 @@
                                                Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="20,16,20,20">
                                 <WrapPanel Margin="0,0,0,14">
                                     <StackPanel Margin="0,0,16,0" Width="240">
@@ -379,6 +384,7 @@
                                     <Button Content="Hủy sửa" Command="{Binding CancelRoomEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0"/>
                                 </StackPanel>
                             </StackPanel>
+                            </ScrollViewer>
                         </DockPanel>
                     </Border>
 
@@ -386,8 +392,8 @@
                     <Border Panel.ZIndex="51"
                             HorizontalAlignment="Center" VerticalAlignment="Center"
                             MaxWidth="860" MaxHeight="680"
-                            Width="Auto" MinWidth="600"
-                            Margin="40"
+                            Width="Auto" MinWidth="0"
+                            Margin="24"
                             Background="{DynamicResource MaterialDesignPaper}"
                             CornerRadius="6"
                             Visibility="{Binding IsRoomFeeDrawerOpen, Converter={StaticResource BoolToVis}}">
@@ -681,7 +687,8 @@
             </TabItem>
                     </TabControl>
                     <Border Panel.ZIndex="50" Background="#70000000" Visibility="{Binding IsDrawerOpen, Converter={StaticResource BoolToVis}}"><Border.InputBindings><MouseBinding MouseAction="LeftClick" Command="{Binding CloseDrawerCommand}"/></Border.InputBindings></Border>
-                    <Border Panel.ZIndex="51" HorizontalAlignment="Center" VerticalAlignment="Center" Width="540" Margin="40" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsTenantDrawerOpen, Converter={StaticResource BoolToVis}}">
+                    <Border Panel.ZIndex="51" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                            MaxWidth="540" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsTenantDrawerOpen, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
                             <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                                 <DockPanel>
@@ -689,6 +696,7 @@
                                     <TextBlock Text="{Binding TenantFormMode}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="20,16,20,20">
                                 <WrapPanel Margin="0,0,0,14">
                                     <StackPanel Width="240" Margin="0,0,16,0">
@@ -718,9 +726,11 @@
                                     <Button Content="Hủy sửa" Command="{Binding CancelTenantEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0"/>
                                 </StackPanel>
                             </StackPanel>
+                            </ScrollViewer>
                         </DockPanel>
                     </Border>
-                    <Border Panel.ZIndex="51" HorizontalAlignment="Center" VerticalAlignment="Center" Width="540" Margin="40" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsAssignmentDrawerOpen, Converter={StaticResource BoolToVis}}">
+                    <Border Panel.ZIndex="51" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                            MaxWidth="540" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsAssignmentDrawerOpen, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
                             <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                                 <DockPanel>
@@ -728,6 +738,7 @@
                                     <TextBlock Text="Thêm người thuê vào phòng" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </Border>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <Grid x:Name="AssignmentDrawerBody" Margin="20,16,20,20" PreviewMouseDown="AssignmentDrawerBody_PreviewMouseDown">
                             <StackPanel>
                                 <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="4" Padding="12,10" Margin="0,0,0,14">
@@ -793,9 +804,10 @@
                                 </Border>
                             </Canvas>
                             </Grid>
+                            </ScrollViewer>
                         </DockPanel>
                     </Border>
-                    <Border Panel.ZIndex="51" HorizontalAlignment="Center" VerticalAlignment="Center" Width="760" MaxHeight="620" Margin="40" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsAssignmentRoomDetailDrawerOpen, Converter={StaticResource BoolToVis}}">
+                    <Border Panel.ZIndex="51" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="760" MaxHeight="620" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsAssignmentRoomDetailDrawerOpen, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
                             <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                                 <DockPanel>
@@ -843,7 +855,7 @@
                             </DockPanel>
                         </DockPanel>
                     </Border>
-                    <Border Panel.ZIndex="52" HorizontalAlignment="Center" VerticalAlignment="Center" Width="620" MaxHeight="560" Margin="40" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsTransferRoomDrawerOpen, Converter={StaticResource BoolToVis}}">
+                    <Border Panel.ZIndex="52" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="620" MaxHeight="560" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsTransferRoomDrawerOpen, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
                             <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                                 <DockPanel>
@@ -890,7 +902,7 @@
                             </DockPanel>
                         </DockPanel>
                     </Border>
-                    <Border Panel.ZIndex="51" HorizontalAlignment="Center" VerticalAlignment="Center" Width="820" MaxHeight="640" Margin="40" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsAssignmentHistoryDrawerOpen, Converter={StaticResource BoolToVis}}">
+                    <Border Panel.ZIndex="51" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="820" MaxHeight="640" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsAssignmentHistoryDrawerOpen, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
                             <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                                 <DockPanel>
@@ -981,6 +993,7 @@
                 </DockPanel>
             </TabItem>
             <TabItem x:Name="InvoicesTab" Header="Hóa đơn">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <DockPanel Margin="8">
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                         <StackPanel>
@@ -1056,6 +1069,7 @@
                         </GroupBox>
                     </Grid>
                 </DockPanel>
+                </ScrollViewer>
             </TabItem>
             <TabItem x:Name="PaymentsTab" Header="Lịch sử thanh toán">
                 <DockPanel Margin="8">
@@ -1086,7 +1100,7 @@
             </TabItem>
                 </TabControl>
                 <Border Panel.ZIndex="60" Background="#70000000" Visibility="{Binding IsDrawerOpen, Converter={StaticResource BoolToVis}}"/>
-                <Border Panel.ZIndex="61" HorizontalAlignment="Center" VerticalAlignment="Center" Width="860" MaxHeight="680" Margin="40" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsInvoiceGenerationDrawerOpen, Converter={StaticResource BoolToVis}}">
+                <Border Panel.ZIndex="61" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="860" MaxHeight="680" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsInvoiceGenerationDrawerOpen, Converter={StaticResource BoolToVis}}">
                     <DockPanel>
                         <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                             <DockPanel>
@@ -1094,7 +1108,8 @@
                                 <TextBlock Text="Tạo hóa đơn tháng này" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
                             </DockPanel>
                         </Border>
-                        <DockPanel Margin="20,16,20,20">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <DockPanel Margin="20,16,20,20">
                             <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                                 <TextBlock Text="Tạo hóa đơn lẻ" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <WrapPanel>
@@ -1141,9 +1156,10 @@
                                 </Grid>
                             </DockPanel>
                         </DockPanel>
+                            </ScrollViewer>
                     </DockPanel>
                 </Border>
-                <Border Panel.ZIndex="62" HorizontalAlignment="Center" VerticalAlignment="Center" Width="560" MaxHeight="560" Margin="40" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsPaymentDrawerOpen, Converter={StaticResource BoolToVis}}">
+                <Border Panel.ZIndex="62" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="560" MaxHeight="560" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsPaymentDrawerOpen, Converter={StaticResource BoolToVis}}">
                     <DockPanel>
                         <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                             <DockPanel>
@@ -1151,7 +1167,8 @@
                                 <TextBlock Text="Ghi nhận thanh toán" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
                             </DockPanel>
                         </Border>
-                        <StackPanel Margin="20,16,20,20">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="20,16,20,20">
                             <Grid Margin="0,0,0,14">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -1186,6 +1203,7 @@
                                 <Button Content="Đóng" Command="{Binding CloseDrawerCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0"/>
                             </StackPanel>
                         </StackPanel>
+                            </ScrollViewer>
                     </DockPanel>
                 </Border>
                 </Grid>
@@ -1193,6 +1211,7 @@
             <TabItem Header="Cài đặt">
                 <TabControl TabStripPlacement="Top" SelectionChanged="TabControl_SelectionChanged">
             <TabItem x:Name="SettingsTab" Header="Dữ liệu &amp; Sao lưu">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <StackPanel Margin="16">
                     <TextBlock Text="Vị trí file dữ liệu" FontWeight="SemiBold"/>
                     <TextBox Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" MinWidth="720"/>
@@ -1208,8 +1227,10 @@
                     <Button Content="Tạo dữ liệu mẫu" Width="280" HorizontalAlignment="Left" Command="{Binding SeedDemoDataCommand}"/>
                     <Button Content="Xóa toàn bộ dữ liệu" Width="280" HorizontalAlignment="Left" Command="{Binding ClearAllDataCommand}"/>
                 </StackPanel>
+                </ScrollViewer>
             </TabItem>
             <TabItem x:Name="AutomationTab" Header="AI &amp; Tự động hóa">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <DockPanel Margin="16">
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tích hợp AI &amp; Automation"/>
                     
@@ -1259,6 +1280,7 @@
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
+                </ScrollViewer>
             </TabItem>
                 </TabControl>
             </TabItem>
