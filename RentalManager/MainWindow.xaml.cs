@@ -80,6 +80,24 @@ public partial class MainWindow : Window
         BillingTabs.SelectedItem = InvoicesTab;
     }
 
+    private void MonthlyOverviewContent_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var shouldStack = e.NewSize.Width < 980;
+
+        MonthlyOverviewTablesFirstColumn.Width = new GridLength(1, GridUnitType.Star);
+        MonthlyOverviewTablesSecondColumn.Width = shouldStack
+            ? new GridLength(0)
+            : new GridLength(1, GridUnitType.Star);
+        MonthlyOverviewTablesSecondRow.Height = shouldStack
+            ? GridLength.Auto
+            : new GridLength(0);
+
+        Grid.SetRow(DashboardPaymentsGroup, shouldStack ? 1 : 0);
+        Grid.SetColumn(DashboardPaymentsGroup, shouldStack ? 0 : 1);
+        Grid.SetColumnSpan(DashboardPaymentsGroup, shouldStack ? 2 : 1);
+        Grid.SetColumnSpan(DashboardInvoicesGroup, shouldStack ? 2 : 1);
+    }
+
     private void InvoiceReadinessRows_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is MainViewModel viewModel &&

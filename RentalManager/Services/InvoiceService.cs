@@ -47,6 +47,7 @@ public class InvoiceService
             db.SaveChanges();
         }
 
+        EnsureRoomHasActiveTenantForBillingMonth(db, roomId, billingMonth);
         EnsureRoomHasRepresentativeIfOccupied(db, roomId);
         EnsureMeterReadingsPresent(db, roomId, billingMonth);
         var invoice = _calculationService.BuildDraftInvoice(roomId, billingMonth);
@@ -155,6 +156,7 @@ public class InvoiceService
                 continue;
             }
 
+            EnsureRoomHasActiveTenantForBillingMonth(db, roomId, billingMonth);
             EnsureRoomHasRepresentativeIfOccupied(db, roomId);
             EnsureMeterReadingsPresent(db, roomId, billingMonth);
             var invoice = _calculationService.BuildDraftInvoice(roomId, billingMonth);
@@ -226,6 +228,14 @@ public class InvoiceService
         }
     }
 
+    private static void EnsureRoomHasActiveTenantForBillingMonth(RentalManagerDbContext db, int roomId, string billingMonth)
+    {
+        if (!HasActiveTenantForBillingMonth(db, roomId, billingMonth))
+        {
+            throw new ValidationException("Không thể tạo hóa đơn vì phòng chưa có người thuê.");
+        }
+    }
+
     private static string? GetSkipReason(RentalManagerDbContext db, int roomId, string billingMonth)
     {
         if (db.Invoices.Any(x => x.RoomId == roomId && x.BillingMonth == billingMonth))
@@ -233,8 +243,7 @@ public class InvoiceService
             return "Đã có hóa đơn tháng này";
         }
 
-        var hasActiveTenant = db.RoomTenants.Any(x => x.RoomId == roomId && x.Status == RoomTenantStatus.Active);
-        if (!hasActiveTenant)
+        if (!HasActiveTenantForBillingMonth(db, roomId, billingMonth))
         {
             return "Phòng chưa có người thuê";
         }
@@ -259,6 +268,20 @@ public class InvoiceService
         }
 
         return "Thiếu chỉ số";
+    }
+
+    private static bool HasActiveTenantForBillingMonth(RentalManagerDbContext db, int roomId, string billingMonth)
+    {
+        var monthStart = DateTime.TryParse($"{billingMonth}-01", out var parsedMonth)
+            ? parsedMonth.Date
+            : DateTime.Today.Date;
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+        return db.RoomTenants.Any(x =>
+            x.RoomId == roomId &&
+            x.Status == RoomTenantStatus.Active &&
+            x.StartDate <= monthEnd &&
+            (x.EndDate == null || x.EndDate >= monthStart));
     }
 
     private static void EnsureMeterReadingsPresent(RentalManagerDbContext db, int roomId, string billingMonth)

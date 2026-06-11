@@ -33,6 +33,9 @@
             <Setter Property="Margin" Value="4"/>
             <Setter Property="MinWidth" Value="150"/>
         </Style>
+        <Style x:Key="TopBarComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+        </Style>
         <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
             <Setter Property="Margin" Value="4"/>
         </Style>
@@ -71,9 +74,9 @@
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock Text="Tháng" VerticalAlignment="Center" Margin="8,0,4,0" Foreground="White"/>
-                    <ComboBox ItemsSource="{Binding MonthOptions}" SelectedItem="{Binding SelectedBillingMonth}" Width="70" Foreground="White" materialDesign:HintAssist.Foreground="White"/>
+                    <ComboBox ItemsSource="{Binding MonthOptions}" SelectedItem="{Binding SelectedBillingMonth}" Width="70" Foreground="White" materialDesign:HintAssist.Foreground="White" ItemContainerStyle="{StaticResource TopBarComboBoxItemStyle}"/>
                     <TextBlock Text="Năm" VerticalAlignment="Center" Margin="16,0,4,0" Foreground="White"/>
-                    <ComboBox ItemsSource="{Binding YearOptions}" SelectedItem="{Binding SelectedBillingYear}" Width="90" Foreground="White" materialDesign:HintAssist.Foreground="White"/>
+                    <ComboBox ItemsSource="{Binding YearOptions}" SelectedItem="{Binding SelectedBillingYear}" Width="90" Foreground="White" materialDesign:HintAssist.Foreground="White" ItemContainerStyle="{StaticResource TopBarComboBoxItemStyle}"/>
                     <Button Content="Làm mới" Command="{Binding RefreshCommand}" Margin="16,0,0,0" Style="{StaticResource MaterialDesignOutlinedLightButton}"/>
                 </StackPanel>
             </DockPanel>
@@ -87,8 +90,8 @@
             <TabItem x:Name="DashboardTab" Header="Tổng quan">
                 <TabControl TabStripPlacement="Top" SelectionChanged="TabControl_SelectionChanged">
                     <TabItem Header="Tổng quan tháng">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                        <DockPanel Margin="8">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <DockPanel x:Name="MonthlyOverviewContent" Margin="8" SizeChanged="MonthlyOverviewContent_SizeChanged">
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource PageTitle}" Text="Tổng quan tháng"/>
                             <GroupBox DockPanel.Dock="Top" Header="Bộ lọc">
                                 <WrapPanel>
@@ -108,23 +111,27 @@
                                 <GroupBox Header="Hóa đơn còn nợ" Width="170"><TextBlock Text="{Binding Dashboard.UnpaidInvoiceCount}" FontSize="18"/></GroupBox>
                             </WrapPanel>
                             <Border DockPanel.Dock="Top" Margin="10,0,10,4" Padding="8" Background="#fff7df" BorderBrush="#e2bf65" BorderThickness="1">
-                                <StackPanel Orientation="Horizontal">
+                                <WrapPanel>
                                     <TextBlock Text="Có "/>
                                     <TextBlock Text="{Binding Dashboard.MissingReadingCount}" FontWeight="SemiBold"/>
                                     <TextBlock Text=" phòng thiếu chỉ số điện/nước trong tháng đang chọn."/>
-                                </StackPanel>
+                                </WrapPanel>
                             </Border>
-                            <Grid>
+                            <Grid x:Name="MonthlyOverviewTablesGrid">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition x:Name="MonthlyOverviewTablesFirstRow" Height="Auto"/>
+                                    <RowDefinition x:Name="MonthlyOverviewTablesSecondRow" Height="0"/>
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition/>
+                                    <ColumnDefinition x:Name="MonthlyOverviewTablesFirstColumn"/>
+                                    <ColumnDefinition x:Name="MonthlyOverviewTablesSecondColumn"/>
                                 </Grid.ColumnDefinitions>
-                                <GroupBox Header="Trạng thái hóa đơn trong tháng" Grid.Column="0">
+                                <GroupBox x:Name="DashboardInvoicesGroup" Header="Trạng thái hóa đơn trong tháng" Grid.Row="0" Grid.Column="0">
                                     <DockPanel>
-                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+                                        <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                                             <TextBlock Text="Chọn một hóa đơn rồi bấm Ghi nhận thanh toán." VerticalAlignment="Center" TextWrapping="Wrap"/>
                                             <Button Content="Ghi nhận thanh toán" Command="{Binding OpenPaymentDrawerCommand}" Click="DashboardPaymentButton_Click" Margin="12,0,0,0" Padding="10,0"/>
-                                        </StackPanel>
+                                        </WrapPanel>
                                         <DataGrid ItemsSource="{Binding DashboardInvoices}" SelectedItem="{Binding SelectedInvoice}" SelectionMode="Single">
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="Tháng" Binding="{Binding BillingMonth}" Width="75"/>
@@ -137,7 +144,7 @@
                                         </DataGrid>
                                     </DockPanel>
                                 </GroupBox>
-                                <GroupBox Header="Lịch sử thanh toán" Grid.Column="1">
+                                <GroupBox x:Name="DashboardPaymentsGroup" Header="Lịch sử thanh toán" Grid.Row="0" Grid.Column="1">
                                     <DataGrid ItemsSource="{Binding DashboardRecentPayments}">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Ngày" Binding="{Binding PaymentDate, StringFormat=d}" Width="90"/>
