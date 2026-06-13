@@ -98,6 +98,24 @@ public partial class MainWindow : Window
         Grid.SetColumnSpan(DashboardInvoicesGroup, shouldStack ? 2 : 1);
     }
 
+    private void InvoicesPageContent_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var shouldStack = e.NewSize.Width < 980;
+
+        InvoicesWorkspaceFirstColumn.Width = new GridLength(shouldStack ? 1 : 2, GridUnitType.Star);
+        InvoicesWorkspaceSecondColumn.Width = shouldStack
+            ? new GridLength(0)
+            : new GridLength(1.2, GridUnitType.Star);
+        InvoicesWorkspaceSecondRow.Height = shouldStack
+            ? GridLength.Auto
+            : new GridLength(0);
+
+        Grid.SetRow(InvoiceDetailGroup, shouldStack ? 1 : 0);
+        Grid.SetColumn(InvoiceDetailGroup, shouldStack ? 0 : 1);
+        Grid.SetColumnSpan(InvoiceDetailGroup, shouldStack ? 2 : 1);
+        Grid.SetColumnSpan(InvoicesListGroup, shouldStack ? 2 : 1);
+    }
+
     private void InvoiceReadinessRows_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is MainViewModel viewModel &&

@@ -110,6 +110,8 @@ public class MainViewModel : ViewModelBase
     private bool _isTransferRoomDrawerOpen;
     private bool _isInvoiceGenerationDrawerOpen;
     private bool _isPaymentDrawerOpen;
+    private bool _isMeterReadingDrawerOpen;
+    private bool _isFeeTypeDrawerOpen;
     private Room? _selectedAssignmentRoom;
     private bool _assignmentShowFormerTenants;
     private RoomTenant? _transferAssignment;
@@ -125,6 +127,7 @@ public class MainViewModel : ViewModelBase
         AddPropertyCommand = new RelayCommand(() => Run(AddProperty), () => NewProperty.Id == 0);
         SavePropertyCommand = new RelayCommand(() => Run(SaveProperty), () => NewProperty.Id > 0);
         EditPropertyCommand = new RelayCommand(() => Run(EditProperty), () => SelectedProperty is not null);
+        DeletePropertyCommand = new RelayCommand(() => Run(DeleteProperty), () => SelectedProperty is not null);
         DeactivatePropertyCommand = new RelayCommand(() => Run(DeactivateProperty), () => SelectedProperty is not null);
         AddRoomCommand = new RelayCommand(() => Run(AddRoom), () => NewRoom.Id == 0);
         SaveRoomCommand = new RelayCommand(() => Run(SaveRoom), () => NewRoom.Id > 0);
@@ -146,6 +149,10 @@ public class MainViewModel : ViewModelBase
         EditRoomFeeConfigCommand = new RelayCommand(() => Run(EditRoomFeeConfig), () => SelectedRoomFeeConfig is not null);
         DisableRoomFeeConfigCommand = new RelayCommand(() => Run(DisableRoomFeeConfig), () => SelectedRoomFeeConfig is not null);
         AddMeterReadingCommand = new RelayCommand(() => Run(AddMeterReading));
+        OpenMeterReadingDrawerCommand = new RelayCommand(OpenMeterReadingDrawer);
+        CloseMeterReadingDrawerCommand = new RelayCommand(CloseMeterReadingDrawer);
+        OpenAddFeeTypeDrawerCommand = new RelayCommand(OpenAddFeeTypeDrawer);
+        CloseFeeTypeDrawerCommand = new RelayCommand(CloseFeeTypeDrawer);
         GenerateInvoiceCommand = new RelayCommand(() => Run(GenerateInvoice));
         GenerateAllInvoicesCommand = new RelayCommand(() => Run(GenerateAllInvoices));
         GenerateReadyInvoicesCommand = new RelayCommand(() => Run(GenerateReadyInvoices));
@@ -187,7 +194,9 @@ public class MainViewModel : ViewModelBase
         OpenAddTenantDrawerCommand  = new RelayCommand(() => { CancelTenantEdit(); IsTenantDrawerOpen = true; });
         OpenEditTenantDrawerCommand = new RelayCommand<Tenant>(t => Run(() => { SelectedTenant = t; EditTenant(); IsTenantDrawerOpen = true; }));
         OpenAssignmentDrawerCommand = new RelayCommand(() => Run(OpenAssignmentDrawer));
-        OpenEditPropertyDrawerCommand = new RelayCommand<Property>(p => Run(() => { SelectedProperty = p; EditProperty(); IsPropertyDrawerOpen = true; }));
+        OpenEditPropertyDrawerCommand = new RelayCommand<Property>(
+            p => Run(() => { SelectedProperty = p; EditProperty(); IsPropertyDrawerOpen = true; }),
+            p => p is not null);
         OpenEditRoomDrawerCommand     = new RelayCommand<Room>(r => Run(() => { SelectedRoom = r; EditRoom(); IsRoomDrawerOpen = true; }));
         OpenRoomFeeDrawerCommand      = new RelayCommand<Room>(r => { SelectedRoom = r; NewRoomFeePropertyId = r?.PropertyId ?? 0; NewRoomFeeConfig.RoomId = r?.Id ?? 0; OnPropertyChanged(nameof(NewRoomFeeConfig)); IsRoomFeeDrawerOpen = true; });
         CancelPropertyEditCommand = new RelayCommand(CancelPropertyEdit, () => NewProperty.Id > 0);
@@ -200,7 +209,7 @@ public class MainViewModel : ViewModelBase
         EditRoomRowCommand = new RelayCommand<Room>(room => Run(() => { SelectedRoom = room; EditRoom(); }));
         DeactivateRoomRowCommand = new RelayCommand<Room>(room => Run(() => { SelectedRoom = room; CheckoutRoom(); }));
         EditTenantRowCommand = new RelayCommand<Tenant>(tenant => Run(() => { SelectedTenant = tenant; EditTenant(); }));
-        EditFeeTypeRowCommand = new RelayCommand<FeeType>(feeType => Run(() => { SelectedFeeType = feeType; EditFeeType(); }));
+        EditFeeTypeRowCommand = new RelayCommand<FeeType>(feeType => Run(() => OpenEditFeeTypeDrawer(feeType)));
         DeactivateFeeTypeRowCommand = new RelayCommand<FeeType>(feeType => Run(() => { SelectedFeeType = feeType; DeactivateFeeType(); }));
         EditRoomFeeRowCommand = new RelayCommand<RoomFeeConfig>(config => Run(() => { SelectedRoomFeeConfig = config; EditRoomFeeConfig(); }));
         DisableRoomFeeRowCommand = new RelayCommand<RoomFeeConfig>(config => Run(() => { SelectedRoomFeeConfig = config; DisableRoomFeeConfig(); }));
@@ -1096,7 +1105,9 @@ public class MainViewModel : ViewModelBase
     public string PropertyFormMode => NewProperty.Id > 0 ? $"Đang sửa: {NewProperty.Name}" : "Đang thêm mới";
     public string RoomFormMode => NewRoom.Id > 0 ? $"Đang sửa: {NewRoom.RoomName}" : "Đang thêm mới";
     public string TenantFormMode => NewTenant.Id > 0 ? $"Đang sửa: {NewTenant.FullName}" : "Đang thêm mới";
-    public string FeeTypeFormMode => NewFeeType.Id > 0 ? $"Đang sửa: {NewFeeType.DisplayName}" : "Đang thêm mới";
+    public string FeeTypeFormMode => NewFeeType.Id > 0 ? "Sửa khoản phí" : "Thêm khoản phí";
+    public bool IsFeeTypeCreateMode => NewFeeType.Id == 0;
+    public bool IsFeeTypeEditMode => NewFeeType.Id > 0;
     public string SelectedFeeTypeToggleActionText => SelectedFeeType?.ToggleActionText ?? "Ngừng";
     public string RoomFeeFormMode => NewRoomFeeConfig.Id > 0 ? $"Đang sửa: {RoomFeeEditTitle}" : "Thêm khoản phí cho phòng";
     public string SelectedRoomFeeToggleActionText => SelectedRoomFeeConfig?.ToggleActionText ?? "Ngừng";
@@ -1130,6 +1141,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand AddPropertyCommand { get; }
     public RelayCommand SavePropertyCommand { get; }
     public RelayCommand EditPropertyCommand { get; }
+    public RelayCommand DeletePropertyCommand { get; }
     public RelayCommand DeactivatePropertyCommand { get; }
     public RelayCommand AddRoomCommand { get; }
     public RelayCommand SaveRoomCommand { get; }
@@ -1151,6 +1163,10 @@ public class MainViewModel : ViewModelBase
     public RelayCommand EditRoomFeeConfigCommand { get; }
     public RelayCommand DisableRoomFeeConfigCommand { get; }
     public RelayCommand AddMeterReadingCommand { get; }
+    public RelayCommand OpenMeterReadingDrawerCommand { get; }
+    public RelayCommand CloseMeterReadingDrawerCommand { get; }
+    public RelayCommand OpenAddFeeTypeDrawerCommand { get; }
+    public RelayCommand CloseFeeTypeDrawerCommand { get; }
     public RelayCommand GenerateInvoiceCommand { get; }
     public RelayCommand GenerateAllInvoicesCommand { get; }
     public RelayCommand GenerateReadyInvoicesCommand { get; }
@@ -1205,7 +1221,9 @@ public class MainViewModel : ViewModelBase
     public bool IsTransferRoomDrawerOpen { get => _isTransferRoomDrawerOpen; set { if (SetProperty(ref _isTransferRoomDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsInvoiceGenerationDrawerOpen { get => _isInvoiceGenerationDrawerOpen; set { if (SetProperty(ref _isInvoiceGenerationDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsPaymentDrawerOpen { get => _isPaymentDrawerOpen; set { if (SetProperty(ref _isPaymentDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
-    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen || IsAssignmentDrawerOpen || IsAssignmentHistoryDrawerOpen || IsAssignmentRoomDetailDrawerOpen || IsTransferRoomDrawerOpen || IsInvoiceGenerationDrawerOpen || IsPaymentDrawerOpen;
+    public bool IsMeterReadingDrawerOpen { get => _isMeterReadingDrawerOpen; set { if (SetProperty(ref _isMeterReadingDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsFeeTypeDrawerOpen { get => _isFeeTypeDrawerOpen; set { if (SetProperty(ref _isFeeTypeDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen || IsAssignmentDrawerOpen || IsAssignmentHistoryDrawerOpen || IsAssignmentRoomDetailDrawerOpen || IsTransferRoomDrawerOpen || IsInvoiceGenerationDrawerOpen || IsPaymentDrawerOpen || IsMeterReadingDrawerOpen || IsFeeTypeDrawerOpen;
 
     public bool IsAssignmentTenantDropdownOpen
     {
@@ -1258,10 +1276,24 @@ public class MainViewModel : ViewModelBase
 
     public void Load()
     {
+        var selectedPropertyId = SelectedProperty?.Id;
+        var assignmentFilterPropertyId = AssignmentFilterPropertyId;
+        var invoiceNewPropertyId = InvoiceNewPropertyId;
+        var meterReadingPropertyId = NewMeterReadingPropertyId;
         ResetModule2SelectionsBeforeReload();
         Replace(Properties, _propertyService.GetAll());
         Replace(PropertyFilterOptions, new[] { new PropertyFilterOption { Id = 0, Name = "Tất cả nhà / khu trọ" } }.Concat(Properties.Select(x => new PropertyFilterOption { Id = x.Id, Name = x.Name })));
         Replace(Rooms, _roomService.GetAll());
+        SelectedProperty = Properties.FirstOrDefault(x => x.Id == selectedPropertyId) ?? Properties.FirstOrDefault();
+        AssignmentFilterPropertyId = Properties.Any(x => x.Id == assignmentFilterPropertyId)
+            ? assignmentFilterPropertyId
+            : 0;
+        InvoiceNewPropertyId = Properties.Any(x => x.Id == invoiceNewPropertyId)
+            ? invoiceNewPropertyId
+            : Properties.FirstOrDefault()?.Id ?? 0;
+        NewMeterReadingPropertyId = Properties.Any(x => x.Id == meterReadingPropertyId)
+            ? meterReadingPropertyId
+            : Properties.FirstOrDefault()?.Id ?? 0;
         RefreshRoomFeeFilterRoomOptions();
         RefreshRoomFeeFormRoomOptions();
         RefreshMeterReadingRoomOptions();
@@ -1382,6 +1414,28 @@ public class MainViewModel : ViewModelBase
         if (SelectedProperty is null) throw new ValidationException("Chọn nhà/khu trọ trước.");
         NewProperty = new Property { Id = SelectedProperty.Id, Name = SelectedProperty.Name, Address = SelectedProperty.Address, Note = SelectedProperty.Note, IsActive = SelectedProperty.IsActive, CreatedAt = SelectedProperty.CreatedAt, UpdatedAt = SelectedProperty.UpdatedAt };
         NotifyFormModes();
+    }
+
+    private void DeleteProperty()
+    {
+        if (SelectedProperty is null) throw new ValidationException("Chọn nhà/khu trọ trước.");
+
+        var selectedIndex = Properties.IndexOf(SelectedProperty);
+        var nextProperty = Properties.ElementAtOrDefault(selectedIndex + 1)
+            ?? Properties.ElementAtOrDefault(selectedIndex - 1);
+        var confirm = MessageBox.Show(
+            $"Bạn có chắc muốn xóa nhà / khu trọ \"{SelectedProperty.Name}\" không?",
+            "Xóa nhà / khu trọ",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        _propertyService.Delete(SelectedProperty.Id);
+        SelectedProperty = nextProperty;
+        Load();
     }
 
     private void DeactivateProperty()
@@ -1792,6 +1846,7 @@ public class MainViewModel : ViewModelBase
         _feeTypeService.Save(NewFeeType);
         NewFeeType = new FeeType();
         NotifyFormModes();
+        IsFeeTypeDrawerOpen = false;
         Load();
     }
 
@@ -1801,6 +1856,7 @@ public class MainViewModel : ViewModelBase
         _feeTypeService.Save(NewFeeType);
         NewFeeType = new FeeType();
         NotifyFormModes();
+        IsFeeTypeDrawerOpen = false;
         Load();
     }
 
@@ -1822,6 +1878,27 @@ public class MainViewModel : ViewModelBase
     {
         NewFeeType = new FeeType();
         NotifyFormModes();
+    }
+
+    private void OpenAddFeeTypeDrawer()
+    {
+        CancelFeeTypeEdit();
+        SelectedFeeType = null;
+        IsFeeTypeDrawerOpen = true;
+    }
+
+    private void OpenEditFeeTypeDrawer(FeeType? feeType)
+    {
+        if (feeType is null) throw new ValidationException("Chọn loại phí trước.");
+        SelectedFeeType = feeType;
+        EditFeeType();
+        IsFeeTypeDrawerOpen = true;
+    }
+
+    private void CloseFeeTypeDrawer()
+    {
+        CancelFeeTypeEdit();
+        IsFeeTypeDrawerOpen = false;
     }
 
     private void AddRoomFeeConfig()
@@ -1920,7 +1997,30 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
         RefreshMeterReadingRoomOptions();
         RefreshMeterReadingFeeTypeOptions();
+        IsMeterReadingDrawerOpen = false;
         Load();
+    }
+
+    private void OpenMeterReadingDrawer()
+    {
+        NewMeterReading = new MeterReading();
+        NewMeterReadingPropertyId = Properties.Any(x => x.Id == MeterFilterPropertyId)
+            ? MeterFilterPropertyId
+            : Properties.FirstOrDefault()?.Id ?? 0;
+        OnPropertyChanged(nameof(NewMeterReading));
+        OnPropertyChanged(nameof(NewMeterReadingRoomId));
+        OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
+        IsMeterReadingDrawerOpen = true;
+    }
+
+    private void CloseMeterReadingDrawer()
+    {
+        NewMeterReading = new MeterReading();
+        NewMeterReadingPropertyId = Properties.FirstOrDefault()?.Id ?? 0;
+        OnPropertyChanged(nameof(NewMeterReading));
+        OnPropertyChanged(nameof(NewMeterReadingRoomId));
+        OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
+        IsMeterReadingDrawerOpen = false;
     }
 
     private void GenerateInvoice()
@@ -2339,7 +2439,7 @@ public class MainViewModel : ViewModelBase
         InvoiceFilterYear = SelectedBillingYear;
         InvoiceFilterPropertyId = 0;
         InvoiceFilterRoomId = 0;
-        InvoiceNewPropertyId = 0;
+        InvoiceNewPropertyId = Properties.FirstOrDefault()?.Id ?? 0;
         InvoiceRoomId = 0;
         InvoiceFilterStatus = "Tất cả";
         PaymentSearch = string.Empty;
@@ -2831,6 +2931,8 @@ public class MainViewModel : ViewModelBase
         IsTransferRoomDrawerOpen = false;
         IsInvoiceGenerationDrawerOpen = false;
         IsPaymentDrawerOpen = false;
+        IsMeterReadingDrawerOpen = false;
+        IsFeeTypeDrawerOpen = false;
         IsAssignmentTenantDropdownOpen = false;
     }
 
@@ -3188,6 +3290,8 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(RoomFormMode));
         OnPropertyChanged(nameof(TenantFormMode));
         OnPropertyChanged(nameof(FeeTypeFormMode));
+        OnPropertyChanged(nameof(IsFeeTypeCreateMode));
+        OnPropertyChanged(nameof(IsFeeTypeEditMode));
         OnPropertyChanged(nameof(RoomFeeFormMode));
         OnPropertyChanged(nameof(NewMeterReadingRoomId));
         OnPropertyChanged(nameof(NewMeterReadingFeeTypeId));
@@ -3203,6 +3307,8 @@ public class MainViewModel : ViewModelBase
         AddPropertyCommand.RaiseCanExecuteChanged();
         SavePropertyCommand.RaiseCanExecuteChanged();
         EditPropertyCommand.RaiseCanExecuteChanged();
+        OpenEditPropertyDrawerCommand.RaiseCanExecuteChanged();
+        DeletePropertyCommand.RaiseCanExecuteChanged();
         DeactivatePropertyCommand.RaiseCanExecuteChanged();
         CancelPropertyEditCommand.RaiseCanExecuteChanged();
         AddRoomCommand.RaiseCanExecuteChanged();
