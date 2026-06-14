@@ -112,6 +112,8 @@ public class MainViewModel : ViewModelBase
     private bool _isPaymentDrawerOpen;
     private bool _isMeterReadingDrawerOpen;
     private bool _isFeeTypeDrawerOpen;
+    private bool _isInvoiceDetailDrawerOpen;
+    private DateTime _newPaymentDate = DateTime.Today;
     private Room? _selectedAssignmentRoom;
     private bool _assignmentShowFormerTenants;
     private RoomTenant? _transferAssignment;
@@ -159,11 +161,11 @@ public class MainViewModel : ViewModelBase
         OpenInvoiceGenerationDrawerCommand = new RelayCommand(OpenInvoiceGenerationDrawer);
         SelectInvoiceReadinessRoomCommand = new RelayCommand<InvoiceReadinessRow>(SelectInvoiceReadinessRoom);
         OpenPaymentDrawerCommand = new RelayCommand(() => Run(() => OpenPaymentDrawer(SelectedInvoice)), () => CanPayInvoice(SelectedInvoice));
-        IssueInvoiceCommand = new RelayCommand(() => Run(IssueInvoice), () => SelectedInvoice is not null);
+        IssueInvoiceCommand = new RelayCommand(() => Run(IssueInvoice), () => SelectedInvoice?.Status == InvoiceStatus.Draft);
         RecordPaymentCommand = new RelayCommand(() => Run(RecordPayment), () => CanPayInvoice(SelectedInvoice));
         FillRemainingPaymentCommand = new RelayCommand(FillRemainingPayment, () => CanPayInvoice(SelectedInvoice));
         CopyInvoiceCommand = new RelayCommand(() => Run(CopyInvoice), () => SelectedInvoice is not null);
-        CancelInvoiceCommand = new RelayCommand(() => Run(CancelInvoice), () => SelectedInvoice is not null);
+        CancelInvoiceCommand = new RelayCommand(() => Run(CancelInvoice), () => SelectedInvoice is not null && SelectedInvoice.Status != InvoiceStatus.Cancelled);
         BackupCommand = new RelayCommand(() => Run(Backup));
         RestoreCommand = new RelayCommand(() => Run(Restore));
         OpenDataFolderCommand = new RelayCommand(() => Run(OpenDataFolder));
@@ -213,11 +215,9 @@ public class MainViewModel : ViewModelBase
         DeactivateFeeTypeRowCommand = new RelayCommand<FeeType>(feeType => Run(() => { SelectedFeeType = feeType; DeactivateFeeType(); }));
         EditRoomFeeRowCommand = new RelayCommand<RoomFeeConfig>(config => Run(() => { SelectedRoomFeeConfig = config; EditRoomFeeConfig(); }));
         DisableRoomFeeRowCommand = new RelayCommand<RoomFeeConfig>(config => Run(() => { SelectedRoomFeeConfig = config; DisableRoomFeeConfig(); }));
-        SelectInvoiceRowCommand = new RelayCommand<Invoice>(invoice => { SelectedInvoice = invoice; });
-        PayInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => OpenPaymentDrawer(invoice)));
-        IssueInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => { SelectedInvoice = invoice; IssueInvoice(); }));
-        CopyInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => { SelectedInvoice = invoice; CopyInvoice(); }));
-        CancelInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => { SelectedInvoice = invoice; CancelInvoice(); }));
+        OpenInvoiceDetailRowCommand = new RelayCommand<Invoice>(invoice => Run(() => OpenInvoiceDetailDrawer(invoice)), invoice => invoice is not null);
+        CloseInvoiceDetailDrawerCommand = new RelayCommand(CloseInvoiceDetailDrawer);
+        PayInvoiceRowCommand = new RelayCommand<Invoice>(invoice => Run(() => OpenPaymentDrawer(invoice)), CanPayInvoice);
         RefreshCommand = new RelayCommand(Load);
         Load();
     }
@@ -267,7 +267,7 @@ public class MainViewModel : ViewModelBase
     public ObservableCollection<Payment> FilteredPayments { get; } = new();
     public ObservableCollection<InvoiceReadinessRow> InvoiceReadinessRows { get; } = new();
     public ObservableCollection<InvoiceGenerationSkipRow> InvoiceGenerationSkippedRooms { get; } = new();
-    public ObservableCollection<InvoiceItem> SelectedInvoiceItems { get; } = new();
+    public ObservableCollection<InvoiceDetailLineRow> SelectedInvoiceItems { get; } = new();
     public ObservableCollection<Payment> SelectedInvoicePayments { get; } = new();
 
     public Property NewProperty { get; set; } = new();
@@ -288,6 +288,11 @@ public class MainViewModel : ViewModelBase
         set => SetProperty(ref _newPaymentAmount, value);
     }
     public PaymentMethod NewPaymentMethod { get; set; } = PaymentMethod.Cash;
+    public DateTime NewPaymentDate
+    {
+        get => _newPaymentDate;
+        set => SetProperty(ref _newPaymentDate, value);
+    }
     public string? NewPaymentNote { get; set; }
     public string InvoiceGenerationSummaryText
     {
@@ -398,7 +403,9 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedInvoice, value))
             {
-                Replace(SelectedInvoiceItems, value?.Items.Select(ToDisplayInvoiceItem) ?? Enumerable.Empty<InvoiceItem>());
+                Replace(SelectedInvoiceItems, value is null
+                    ? Enumerable.Empty<InvoiceDetailLineRow>()
+                    : BuildInvoiceDetailLines(value));
                 Replace(SelectedInvoicePayments, value?.Payments ?? Enumerable.Empty<Payment>());
                 if (value is null || value.RemainingAmount <= 0)
                 {
@@ -1223,7 +1230,8 @@ public class MainViewModel : ViewModelBase
     public bool IsPaymentDrawerOpen { get => _isPaymentDrawerOpen; set { if (SetProperty(ref _isPaymentDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsMeterReadingDrawerOpen { get => _isMeterReadingDrawerOpen; set { if (SetProperty(ref _isMeterReadingDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
     public bool IsFeeTypeDrawerOpen { get => _isFeeTypeDrawerOpen; set { if (SetProperty(ref _isFeeTypeDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
-    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen || IsAssignmentDrawerOpen || IsAssignmentHistoryDrawerOpen || IsAssignmentRoomDetailDrawerOpen || IsTransferRoomDrawerOpen || IsInvoiceGenerationDrawerOpen || IsPaymentDrawerOpen || IsMeterReadingDrawerOpen || IsFeeTypeDrawerOpen;
+    public bool IsInvoiceDetailDrawerOpen { get => _isInvoiceDetailDrawerOpen; set { if (SetProperty(ref _isInvoiceDetailDrawerOpen, value)) OnPropertyChanged(nameof(IsDrawerOpen)); } }
+    public bool IsDrawerOpen => IsPropertyDrawerOpen || IsRoomDrawerOpen || IsBulkRoomDrawerOpen || IsRoomFeeDrawerOpen || IsTenantDrawerOpen || IsAssignmentDrawerOpen || IsAssignmentHistoryDrawerOpen || IsAssignmentRoomDetailDrawerOpen || IsTransferRoomDrawerOpen || IsInvoiceGenerationDrawerOpen || IsPaymentDrawerOpen || IsMeterReadingDrawerOpen || IsFeeTypeDrawerOpen || IsInvoiceDetailDrawerOpen;
 
     public bool IsAssignmentTenantDropdownOpen
     {
@@ -1266,11 +1274,9 @@ public class MainViewModel : ViewModelBase
     public RelayCommand<FeeType> DeactivateFeeTypeRowCommand { get; }
     public RelayCommand<RoomFeeConfig> EditRoomFeeRowCommand { get; }
     public RelayCommand<RoomFeeConfig> DisableRoomFeeRowCommand { get; }
-    public RelayCommand<Invoice> SelectInvoiceRowCommand { get; }
+    public RelayCommand<Invoice> OpenInvoiceDetailRowCommand { get; }
+    public RelayCommand CloseInvoiceDetailDrawerCommand { get; }
     public RelayCommand<Invoice> PayInvoiceRowCommand { get; }
-    public RelayCommand<Invoice> IssueInvoiceRowCommand { get; }
-    public RelayCommand<Invoice> CopyInvoiceRowCommand { get; }
-    public RelayCommand<Invoice> CancelInvoiceRowCommand { get; }
     public RelayCommand OpenAddTenantDrawerCommand { get; }
     public RelayCommand<Tenant> OpenEditTenantDrawerCommand { get; }
 
@@ -1344,6 +1350,7 @@ public class MainViewModel : ViewModelBase
         IsTransferRoomDrawerOpen = false;
         IsInvoiceGenerationDrawerOpen = false;
         IsPaymentDrawerOpen = false;
+        IsInvoiceDetailDrawerOpen = false;
         _transferAssignment = null;
         _transferPropertyId = 0;
         _transferRoomId = 0;
@@ -2090,8 +2097,11 @@ public class MainViewModel : ViewModelBase
     private void IssueInvoice()
     {
         EnsureInvoiceSelected();
-        _invoiceService.Issue(SelectedInvoice!.Id);
+        var invoiceId = SelectedInvoice!.Id;
+        _invoiceService.Issue(invoiceId);
         Load();
+        SelectedInvoice = Invoices.FirstOrDefault(x => x.Id == invoiceId);
+        IsInvoiceDetailDrawerOpen = SelectedInvoice is not null;
     }
 
     private void RecordPayment()
@@ -2108,7 +2118,7 @@ public class MainViewModel : ViewModelBase
         }
 
         var invoiceId = SelectedInvoice!.Id;
-        _paymentService.Record(invoiceId, NewPaymentAmount, NewPaymentMethod, DateTime.Today, NewPaymentNote);
+        _paymentService.Record(invoiceId, NewPaymentAmount, NewPaymentMethod, NewPaymentDate, NewPaymentNote);
         NewPaymentNote = null;
         OnPropertyChanged(nameof(NewPaymentNote));
         Load();
@@ -2153,8 +2163,26 @@ public class MainViewModel : ViewModelBase
 
         NewPaymentAmount = invoice.RemainingAmount;
         NewPaymentMethod = PaymentMethod.Cash;
+        NewPaymentDate = DateTime.Today;
         OnPropertyChanged(nameof(NewPaymentMethod));
+        IsInvoiceDetailDrawerOpen = false;
         IsPaymentDrawerOpen = true;
+    }
+
+    private void OpenInvoiceDetailDrawer(Invoice? invoice)
+    {
+        if (invoice is null)
+        {
+            return;
+        }
+
+        SelectedInvoice = invoice;
+        IsInvoiceDetailDrawerOpen = true;
+    }
+
+    private void CloseInvoiceDetailDrawer()
+    {
+        IsInvoiceDetailDrawerOpen = false;
     }
 
     private static bool CanPayInvoice(Invoice? invoice)
@@ -2175,8 +2203,21 @@ public class MainViewModel : ViewModelBase
     private void CancelInvoice()
     {
         EnsureInvoiceSelected();
-        _invoiceService.Cancel(SelectedInvoice!.Id);
+        var confirm = MessageBox.Show(
+            "Bạn có chắc muốn hủy hóa đơn này không?",
+            "Hủy hóa đơn",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        var invoiceId = SelectedInvoice!.Id;
+        _invoiceService.Cancel(invoiceId);
         Load();
+        SelectedInvoice = Invoices.FirstOrDefault(x => x.Id == invoiceId);
+        IsInvoiceDetailDrawerOpen = SelectedInvoice is not null;
     }
 
     private void Backup()
@@ -2575,22 +2616,44 @@ public class MainViewModel : ViewModelBase
         IsAssignmentTenantDropdownOpen = false;
     }
 
-    private static InvoiceItem ToDisplayInvoiceItem(InvoiceItem item)
+    private IEnumerable<InvoiceDetailLineRow> BuildInvoiceDetailLines(Invoice invoice)
     {
-        return new InvoiceItem
+        foreach (var item in invoice.Items)
         {
-            Id = item.Id,
-            InvoiceId = item.InvoiceId,
-            FeeTypeId = item.FeeTypeId,
-            FeeType = item.FeeType,
-            ItemName = item.FeeType?.DisplayName ?? DisplayText.FeeName(item.ItemName),
-            CalculationType = item.CalculationType,
-            Quantity = item.Quantity,
-            Unit = item.Unit,
-            UnitPrice = item.UnitPrice,
-            Amount = item.Amount,
-            Note = item.Note
-        };
+            var row = new InvoiceDetailLineRow
+            {
+                ItemName = item.FeeType?.DisplayName ?? DisplayText.FeeName(item.ItemName),
+                CalculationTypeText = DisplayText.For(item.CalculationType),
+                Quantity = item.Quantity,
+                Unit = item.Unit,
+                UnitPrice = item.UnitPrice,
+                Amount = item.Amount,
+                Note = item.Note,
+                IsMeter = item.CalculationType == CalculationType.Meter
+            };
+
+            if (row.IsMeter && item.FeeTypeId is int feeTypeId)
+            {
+                var reading = MeterReadings.FirstOrDefault(x =>
+                    x.RoomId == invoice.RoomId &&
+                    x.FeeTypeId == feeTypeId &&
+                    x.BillingMonth == invoice.BillingMonth);
+                if (reading is not null &&
+                    reading.UsageAmount == item.Quantity &&
+                    reading.UnitPriceSnapshot == item.UnitPrice &&
+                    reading.Amount == item.Amount)
+                {
+                    row.PreviousReading = reading.PreviousReading;
+                    row.CurrentReading = reading.CurrentReading;
+                }
+                else
+                {
+                    row.MeterEvidenceNote = "Không thể đối chiếu chính xác chỉ số lịch sử của khoản thu này.";
+                }
+            }
+
+            yield return row;
+        }
     }
 
     private void SetAssignmentTenantSearchText(string text)
@@ -2933,6 +2996,7 @@ public class MainViewModel : ViewModelBase
         IsPaymentDrawerOpen = false;
         IsMeterReadingDrawerOpen = false;
         IsFeeTypeDrawerOpen = false;
+        IsInvoiceDetailDrawerOpen = false;
         IsAssignmentTenantDropdownOpen = false;
     }
 

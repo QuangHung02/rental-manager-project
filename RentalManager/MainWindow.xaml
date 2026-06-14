@@ -1107,7 +1107,7 @@
             </TabItem>
             <TabItem x:Name="InvoicesTab" Header="Hóa đơn">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <DockPanel x:Name="InvoicesPageContent" Margin="8" SizeChanged="InvoicesPageContent_SizeChanged">
+                <DockPanel Margin="8">
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                         <StackPanel>
                             <TextBlock Style="{StaticResource PageTitle}" Text="Tạo và theo dõi hóa đơn"/>
@@ -1126,17 +1126,8 @@
                             <Button Content="Xóa lọc" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom"/>
                         </WrapPanel>
                     </GroupBox>
-                    <Grid x:Name="InvoicesWorkspaceGrid">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition x:Name="InvoicesWorkspaceSecondRow" Height="0"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition x:Name="InvoicesWorkspaceFirstColumn" Width="2*"/>
-                            <ColumnDefinition x:Name="InvoicesWorkspaceSecondColumn" Width="1.2*"/>
-                        </Grid.ColumnDefinitions>
-                        <GroupBox x:Name="InvoicesListGroup" Grid.Row="0" Grid.Column="0">
-                            <DockPanel>
+                    <GroupBox>
+                        <DockPanel>
                             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                                 <Button DockPanel.Dock="Right" Content="Tạo hóa đơn tháng này" Command="{Binding OpenInvoiceGenerationDrawerCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0" Margin="16,0,0,0"/>
                                 <TextBlock Text="Danh sách hóa đơn" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -1156,36 +1147,23 @@
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Button Content="Chi tiết" Command="{Binding DataContext.SelectInvoiceRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                                    <Button Content="Chốt hóa đơn" Command="{Binding DataContext.IssueInvoiceRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                                    <Button Content="Thanh toán" Command="{Binding DataContext.PayInvoiceRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                                    <Button Content="Sao chép" Command="{Binding DataContext.CopyInvoiceRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
-                                                    <Button Content="Hủy" Command="{Binding DataContext.CancelInvoiceRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="6,2"/>
+                                                    <Button Content="Chi tiết"
+                                                            Command="{Binding DataContext.OpenInvoiceDetailRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                            Height="30" Padding="8,0" Margin="0,0,6,0"/>
+                                                    <Button Content="Thanh toán"
+                                                            Command="{Binding DataContext.PayInvoiceRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            Height="30" Padding="8,0"/>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
-                            </DockPanel>
-                        </GroupBox>
-                        <GroupBox x:Name="InvoiceDetailGroup" Grid.Row="0" Grid.Column="1" Header="Chi tiết hóa đơn" Margin="4">
-                            <DockPanel>
-                                <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
-                                    <TextBlock Text="{Binding SelectedInvoiceSummary}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                                    <Button Content="Ghi nhận thanh toán" Command="{Binding OpenPaymentDrawerCommand}" HorizontalAlignment="Right" Padding="12,0"/>
-                                </StackPanel>
-                                <DataGrid ItemsSource="{Binding SelectedInvoiceItems}" ScrollViewer.HorizontalScrollBarVisibility="Auto">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Khoản" Binding="{Binding ItemName}" Width="140"/>
-                                        <DataGridTextColumn Header="SL" Binding="{Binding Quantity, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="60"/>
-                                        <DataGridTextColumn Header="Đơn giá" Binding="{Binding UnitPrice, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="90"/>
-                                        <DataGridTextColumn Header="Tiền" Binding="{Binding Amount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="100"/>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </DockPanel>
-                        </GroupBox>
-                    </Grid>
+                        </DockPanel>
+                    </GroupBox>
                 </DockPanel>
                 </ScrollViewer>
             </TabItem>
@@ -1335,7 +1313,113 @@
                             </ScrollViewer>
                     </DockPanel>
                 </Border>
-                <Border Panel.ZIndex="62" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="560" MaxHeight="560" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsPaymentDrawerOpen, Converter={StaticResource BoolToVis}}">
+                <Border Panel.ZIndex="62" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                        MaxWidth="820" MaxHeight="680" Margin="24"
+                        Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6"
+                        Visibility="{Binding IsInvoiceDetailDrawerOpen, Converter={StaticResource BoolToVis}}">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Command="{Binding CloseInvoiceDetailDrawerCommand}"
+                                        Style="{StaticResource MaterialDesignIconButton}" Focusable="False"
+                                        Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
+                                    <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                </Button>
+                                <TextBlock Text="Chi tiết hóa đơn" FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryHueMidForegroundBrush}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+                        <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0"
+                                BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="20,12">
+                            <WrapPanel HorizontalAlignment="Right">
+                                <Button Content="Chốt hóa đơn" Command="{Binding IssueInvoiceCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0" Margin="0,0,8,0"/>
+                                <Button Content="Sao chép" Command="{Binding CopyInvoiceCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0" Margin="0,0,8,0"/>
+                                <Button Content="Hủy hóa đơn" Command="{Binding CancelInvoiceCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0" Margin="0,0,8,0"/>
+                                <Button Content="Thanh toán" Command="{Binding OpenPaymentDrawerCommand}" Padding="12,0" Margin="0,0,8,0"/>
+                                <Button Content="Đóng" Command="{Binding CloseInvoiceDetailDrawerCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}" Padding="12,0"/>
+                            </WrapPanel>
+                        </Border>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="20,16,20,20">
+                                <Grid Margin="0,0,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="110"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Tháng" Margin="0,0,12,8"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedInvoice.BillingMonth}" FontWeight="SemiBold" Margin="0,0,16,8"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Trạng thái" Margin="0,0,12,8"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding SelectedInvoice.StatusText}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Nhà / khu trọ" Margin="0,0,12,8"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedInvoice.PropertyName}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,16,8"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Phòng" Margin="0,0,12,8"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding SelectedInvoice.RoomName}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Người đại diện" Margin="0,0,12,8"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding SelectedInvoice.RepresentativeTenantName}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Tổng tiền" Margin="0,0,12,0"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedInvoice.TotalAmount, StringFormat=N0}" FontWeight="SemiBold"/>
+                                    <StackPanel Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal">
+                                        <TextBlock Text="Đã thu:" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding SelectedInvoice.PaidAmount, StringFormat=N0}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                        <TextBlock Text="Còn lại:" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding SelectedInvoice.RemainingAmount, StringFormat=N0}" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="Các khoản thu" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,8"/>
+                                <DataGrid ItemsSource="{Binding SelectedInvoiceItems}" Margin="0"
+                                          MaxHeight="300" CanUserSortColumns="False"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource MaterialDesignDataGridColumnHeader}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                            <Setter Property="ContentTemplate">
+                                                <Setter.Value>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                                    </DataTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Khoản thu" Binding="{Binding ItemName}" Width="120"/>
+                                        <DataGridTextColumn Header="Cách tính" Binding="{Binding CalculationTypeText}" Width="90"/>
+                                        <DataGridTextColumn Header="Chỉ số cũ" Binding="{Binding PreviousReading, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="75"/>
+                                        <DataGridTextColumn Header="Chỉ số mới" Binding="{Binding CurrentReading, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="75"/>
+                                        <DataGridTextColumn Header="Sử dụng / Số lượng" Binding="{Binding Quantity, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="90"/>
+                                        <DataGridTextColumn Header="Đơn vị" Binding="{Binding Unit}" Width="60"/>
+                                        <DataGridTextColumn Header="Đơn giá" Binding="{Binding UnitPrice, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="95"/>
+                                        <DataGridTextColumn Header="Thành tiền" Binding="{Binding Amount, StringFormat=N0}" ElementStyle="{StaticResource RightCell}" Width="105"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <ItemsControl ItemsSource="{Binding SelectedInvoiceItems}" Margin="0,8,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding MeterEvidenceNote}" Foreground="#b45309"
+                                                       TextWrapping="Wrap" Margin="0,0,0,4"
+                                                       Visibility="{Binding HasMeterEvidenceNote, Converter={StaticResource BoolToVis}}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+                <Border Panel.ZIndex="63" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="560" MaxHeight="600" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsPaymentDrawerOpen, Converter={StaticResource BoolToVis}}">
                     <DockPanel>
                         <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                             <DockPanel>
@@ -1371,8 +1455,12 @@
                             <WrapPanel Margin="0,0,0,16">
                                 <StackPanel Width="150" Margin="0,0,12,0"><TextBlock Text="Số tiền"/><TextBox helpers:MoneyTextBox.Enabled="True" Text="{Binding NewPaymentAmount, UpdateSourceTrigger=LostFocus, StringFormat=N0}"/></StackPanel>
                                 <StackPanel Width="150" Margin="0,0,12,0"><TextBlock Text="Phương thức"/><ComboBox ItemsSource="{Binding PaymentMethodOptions}" SelectedValue="{Binding NewPaymentMethod}" SelectedValuePath="Value" DisplayMemberPath="Text"/></StackPanel>
-                                <StackPanel Width="190"><TextBlock Text="Ghi chú"/><TextBox Text="{Binding NewPaymentNote, UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+                                <StackPanel Width="170"><TextBlock Text="Ngày thanh toán"/><DatePicker SelectedDate="{Binding NewPaymentDate}"/></StackPanel>
                             </WrapPanel>
+                            <TextBlock Text="Ghi chú"/>
+                            <TextBox Text="{Binding NewPaymentNote, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"
+                                     VerticalScrollBarVisibility="Auto" Margin="0,0,0,16"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Điền số còn lại" Command="{Binding FillRemainingPaymentCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0" Padding="12,0"/>
                                 <Button Content="Ghi nhận thanh toán" Command="{Binding RecordPaymentCommand}" Margin="0,0,8,0" Padding="12,0"/>
