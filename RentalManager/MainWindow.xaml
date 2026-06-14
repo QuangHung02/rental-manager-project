@@ -1313,7 +1313,13 @@
                             </ScrollViewer>
                     </DockPanel>
                 </Border>
-                <Border Panel.ZIndex="62" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                <Border Panel.ZIndex="62" Background="Transparent"
+                        Visibility="{Binding IsInvoiceDetailDrawerOpen, Converter={StaticResource BoolToVis}}">
+                    <Border.InputBindings>
+                        <MouseBinding MouseAction="LeftClick" Command="{Binding CloseInvoiceDetailDrawerCommand}"/>
+                    </Border.InputBindings>
+                </Border>
+                <Border Panel.ZIndex="63" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                         MaxWidth="820" MaxHeight="680" Margin="24"
                         Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6"
                         Visibility="{Binding IsInvoiceDetailDrawerOpen, Converter={StaticResource BoolToVis}}">
@@ -1419,7 +1425,7 @@
                         </ScrollViewer>
                     </DockPanel>
                 </Border>
-                <Border Panel.ZIndex="63" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="560" MaxHeight="600" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsPaymentDrawerOpen, Converter={StaticResource BoolToVis}}">
+                <Border Panel.ZIndex="64" HorizontalAlignment="Stretch" VerticalAlignment="Center" MaxWidth="560" MaxHeight="600" Margin="24" Background="{DynamicResource MaterialDesignPaper}" CornerRadius="6" Visibility="{Binding IsPaymentDrawerOpen, Converter={StaticResource BoolToVis}}">
                     <DockPanel>
                         <Border DockPanel.Dock="Top" Padding="20,14" Background="{DynamicResource PrimaryHueMidBrush}" CornerRadius="6,6,0,0">
                             <DockPanel>
