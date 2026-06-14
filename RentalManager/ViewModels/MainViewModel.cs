@@ -155,6 +155,7 @@ public class MainViewModel : ViewModelBase
         CloseMeterReadingDrawerCommand = new RelayCommand(CloseMeterReadingDrawer);
         OpenAddFeeTypeDrawerCommand = new RelayCommand(OpenAddFeeTypeDrawer);
         CloseFeeTypeDrawerCommand = new RelayCommand(CloseFeeTypeDrawer);
+        ClosePaymentDrawerCommand = new RelayCommand(ClosePaymentDrawer);
         GenerateInvoiceCommand = new RelayCommand(() => Run(GenerateInvoice));
         GenerateAllInvoicesCommand = new RelayCommand(() => Run(GenerateAllInvoices));
         GenerateReadyInvoicesCommand = new RelayCommand(() => Run(GenerateReadyInvoices));
@@ -177,10 +178,12 @@ public class MainViewModel : ViewModelBase
         ClearFiltersCommand = new RelayCommand(ClearFilters);
         ClearAssignmentFiltersCommand = new RelayCommand(ClearAssignmentFilters);
         OpenAssignmentHistoryDrawerCommand = new RelayCommand(OpenAssignmentHistoryDrawer);
+        CloseAssignmentHistoryDrawerCommand = new RelayCommand(() => IsAssignmentHistoryDrawerOpen = false);
         OpenAssignmentHistoryForRowCommand = new RelayCommand<RoomTenant>(OpenAssignmentHistoryForRow);
         OpenAssignmentHistoryForRoomCommand = new RelayCommand<Room>(OpenAssignmentHistoryForRoom);
         OpenAssignmentDrawerForRoomCommand = new RelayCommand<Room>(room => Run(() => OpenAssignmentDrawer(room)));
         OpenAssignmentRoomDetailCommand = new RelayCommand<Room>(room => Run(() => OpenAssignmentRoomDetail(room)));
+        CloseAssignmentRoomDetailDrawerCommand = new RelayCommand(CloseAssignmentRoomDetailDrawer);
         SelectAssignmentPropertyCommand = new RelayCommand<Property>(SelectAssignmentProperty);
         ShowAllAssignmentPropertiesCommand = new RelayCommand(ShowAllAssignmentProperties);
         EndSelectedAssignmentRoomCommand = new RelayCommand(() => Run(EndSelectedAssignmentRoom));
@@ -193,6 +196,10 @@ public class MainViewModel : ViewModelBase
         OpenAddRoomDrawerCommand    = new RelayCommand(() => { CancelRoomEdit();     IsRoomDrawerOpen     = true; });
         OpenBulkRoomDrawerCommand   = new RelayCommand(() => { IsBulkRoomDrawerOpen  = true; });
         CloseDrawerCommand          = new RelayCommand(CloseAllDrawers);
+        ClosePropertyDrawerCommand  = new RelayCommand(ClosePropertyDrawer);
+        CloseRoomDrawerCommand      = new RelayCommand(CloseRoomDrawer);
+        CloseRoomFeeDrawerCommand   = new RelayCommand(CloseRoomFeeDrawer);
+        CloseTenantDrawerCommand    = new RelayCommand(CloseTenantDrawer);
         OpenAddTenantDrawerCommand  = new RelayCommand(() => { CancelTenantEdit(); IsTenantDrawerOpen = true; });
         OpenEditTenantDrawerCommand = new RelayCommand<Tenant>(t => Run(() => { SelectedTenant = t; EditTenant(); IsTenantDrawerOpen = true; }));
         OpenAssignmentDrawerCommand = new RelayCommand(() => Run(OpenAssignmentDrawer));
@@ -1183,6 +1190,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand RecordPaymentCommand { get; }
     public RelayCommand FillRemainingPaymentCommand { get; }
     public RelayCommand OpenPaymentDrawerCommand { get; }
+    public RelayCommand ClosePaymentDrawerCommand { get; }
     public RelayCommand CopyInvoiceCommand { get; }
     public RelayCommand CancelInvoiceCommand { get; }
     public RelayCommand BackupCommand { get; }
@@ -1195,10 +1203,12 @@ public class MainViewModel : ViewModelBase
     public RelayCommand ClearFiltersCommand { get; }
     public RelayCommand ClearAssignmentFiltersCommand { get; }
     public RelayCommand OpenAssignmentHistoryDrawerCommand { get; }
+    public RelayCommand CloseAssignmentHistoryDrawerCommand { get; }
     public RelayCommand<RoomTenant> OpenAssignmentHistoryForRowCommand { get; }
     public RelayCommand<Room> OpenAssignmentHistoryForRoomCommand { get; }
     public RelayCommand<Room> OpenAssignmentDrawerForRoomCommand { get; }
     public RelayCommand<Room> OpenAssignmentRoomDetailCommand { get; }
+    public RelayCommand CloseAssignmentRoomDetailDrawerCommand { get; }
     public RelayCommand<Property> SelectAssignmentPropertyCommand { get; }
     public RelayCommand ShowAllAssignmentPropertiesCommand { get; }
     public RelayCommand EndSelectedAssignmentRoomCommand { get; }
@@ -1212,6 +1222,10 @@ public class MainViewModel : ViewModelBase
     public RelayCommand OpenAddRoomDrawerCommand      { get; }
     public RelayCommand OpenBulkRoomDrawerCommand     { get; }
     public RelayCommand CloseDrawerCommand            { get; }
+    public RelayCommand ClosePropertyDrawerCommand    { get; }
+    public RelayCommand CloseRoomDrawerCommand        { get; }
+    public RelayCommand CloseRoomFeeDrawerCommand     { get; }
+    public RelayCommand CloseTenantDrawerCommand      { get; }
     public RelayCommand OpenAssignmentDrawerCommand   { get; }
     public RelayCommand<Property> OpenEditPropertyDrawerCommand { get; }
     public RelayCommand<Room>     OpenEditRoomDrawerCommand     { get; }
@@ -1471,6 +1485,12 @@ public class MainViewModel : ViewModelBase
         NotifyFormModes();
     }
 
+    private void ClosePropertyDrawer()
+    {
+        CancelPropertyEdit();
+        IsPropertyDrawerOpen = false;
+    }
+
     private void AddRoom()
     {
         if (NewRoom.Id == 0 && !string.IsNullOrWhiteSpace(NewRoom.RoomName))
@@ -1570,6 +1590,12 @@ public class MainViewModel : ViewModelBase
     {
         NewRoom = new Room();
         NotifyFormModes();
+    }
+
+    private void CloseRoomDrawer()
+    {
+        CancelRoomEdit();
+        IsRoomDrawerOpen = false;
     }
 
     // ── Bulk room creation ──────────────────────────────────────────────────
@@ -1674,6 +1700,12 @@ public class MainViewModel : ViewModelBase
     {
         NewTenant = new Tenant();
         NotifyFormModes();
+    }
+
+    private void CloseTenantDrawer()
+    {
+        CancelTenantEdit();
+        IsTenantDrawerOpen = false;
     }
 
     private void AssignTenant()
@@ -1971,6 +2003,12 @@ public class MainViewModel : ViewModelBase
         NotifyFormModes();
     }
 
+    private void CloseRoomFeeDrawer()
+    {
+        CancelRoomFeeConfigEdit();
+        IsRoomFeeDrawerOpen = false;
+    }
+
     private void AddMeterReading()
     {
         if (NewMeterReading.RoomId <= 0)
@@ -2169,6 +2207,17 @@ public class MainViewModel : ViewModelBase
         IsPaymentDrawerOpen = true;
     }
 
+    private void ClosePaymentDrawer()
+    {
+        NewPaymentAmount = 0;
+        NewPaymentMethod = PaymentMethod.Cash;
+        NewPaymentDate = DateTime.Today;
+        NewPaymentNote = null;
+        OnPropertyChanged(nameof(NewPaymentMethod));
+        OnPropertyChanged(nameof(NewPaymentNote));
+        IsPaymentDrawerOpen = false;
+    }
+
     private void OpenInvoiceDetailDrawer(Invoice? invoice)
     {
         if (invoice is null)
@@ -2183,6 +2232,14 @@ public class MainViewModel : ViewModelBase
     private void CloseInvoiceDetailDrawer()
     {
         IsInvoiceDetailDrawerOpen = false;
+    }
+
+    private void CloseAssignmentRoomDetailDrawer()
+    {
+        if (!IsTransferRoomDrawerOpen)
+        {
+            IsAssignmentRoomDetailDrawerOpen = false;
+        }
     }
 
     private static bool CanPayInvoice(Invoice? invoice)
