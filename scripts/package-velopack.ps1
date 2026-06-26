@@ -2,7 +2,8 @@ param(
     [string]$Version = "",
     [string]$Runtime = "win-x64",
     [string]$Configuration = "Release",
-    [string]$OutputDir = "release\velopack"
+    [string]$OutputDir = "release\velopack",
+    [string]$ReleaseNotesPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -66,7 +67,7 @@ Invoke-Checked "dotnet" @(
     "-p:Version=$Version"
 )
 
-Invoke-Checked "dotnet" @(
+$packArgs = @(
     "tool",
     "run",
     "vpk",
@@ -94,6 +95,13 @@ Invoke-Checked "dotnet" @(
     "--outputDir",
     $releaseDir
 )
+
+if (-not [string]::IsNullOrWhiteSpace($ReleaseNotesPath)) {
+    $resolvedReleaseNotesPath = Resolve-Path $ReleaseNotesPath
+    $packArgs += @("--releaseNotes", $resolvedReleaseNotesPath)
+}
+
+Invoke-Checked "dotnet" $packArgs
 
 $setupPath = Join-Path $releaseDir "RentalManager-win-Setup.exe"
 if (-not (Test-Path $setupPath)) {

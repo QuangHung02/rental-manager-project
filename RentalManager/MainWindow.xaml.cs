@@ -4,16 +4,60 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using RentalManager.DTOs;
+using RentalManager.Services;
 using RentalManager.ViewModels;
 
 namespace RentalManager;
 
 public partial class MainWindow : Window
 {
+    private readonly UpdateService _updateService = new();
+
     public MainWindow()
     {
         InitializeComponent();
         DataContext = new MainViewModel();
+        Loaded += MainWindow_Loaded;
+    }
+
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= MainWindow_Loaded;
+        await CheckForUpdatesAfterStartupAsync();
+    }
+
+    private async Task CheckForUpdatesAfterStartupAsync()
+    {
+        var update = await _updateService.CheckForUpdatesAsync();
+        if (update is null)
+        {
+            return;
+        }
+
+        var dialog = new UpdateDialog(update) { Owner = this };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            Mouse.OverrideCursor = Cursors.Wait;
+            await _updateService.DownloadAndApplyUpdateAsync(update);
+        }
+        catch
+        {
+            Mouse.OverrideCursor = null;
+            MessageBox.Show(
+                "The update could not be downloaded or applied. Please try again later.",
+                "RentalManager update",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
     }
 
     private void AssignmentTenantSearchBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
